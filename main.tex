@@ -1,0 +1,98 @@
+\documentclass{article}
+\usepackage{sty/Layout}
+\usepackage{sty/Commands}
+\usepackage{sty/Titlepage}
+\usepackage{siunitx}
+\sisetup{separate-uncertainty = true}
+\usepackage{multirow}
+\usepackage{marginnote}
+\usepackage{xcolor}
+
+% ---- Link-Stil -------------------------------------------------------
+% Keine roten Kästen: farbiger Linktext, Querverweise im Text unterstrichen,
+% damit sie auch auf Papier gut zu erkennen sind.
+\definecolor{linkblue}{rgb}{0.10,0.35,0.65}
+\hypersetup{
+	colorlinks = true,
+	linkcolor  = linkblue,   % Inhaltsverzeichnis, \ref, \eqref, Abschnitts-/Gleichungslinks
+	citecolor  = linkblue,
+	urlcolor   = linkblue,
+	filecolor  = linkblue,
+	linktoc    = all,
+}
+\usepackage[most]{tcolorbox}
+\usepackage[normalem]{ulem}
+\let\OrigRef\ref
+\renewcommand{\ref}[1]{{\color{linkblue}\uline{\OrigRef{#1}}}}
+\renewcommand{\eqref}[1]{{\color{linkblue}\uline{\textup{(\OrigRef{#1})}}}}
+% -----------------------------------------------------------------------
+
+
+\begin{document}
+
+\makecoverpage{
+	experiment      = 73,
+	title           = {VERSUCHSTITEL},
+	group           = 8,
+	authors         = {Matthes Neumann},
+	tutor           = {Natalia Sychva},
+	dateexperiment  = {30. August 2026}
+}
+
+\pagestyle{fancy}
+
+\tableofcontents
+\clearpage
+
+\section{Einleitung}
+
+\subsection{Motivation}
+\label{sec:motivation}
+
+\vspace{1em}
+\begin{tcolorbox}[
+	colback  = linkblue!3,
+	colframe = linkblue!55,
+	boxrule  = 0.4pt,
+	arc      = 2pt,
+	left     = 6pt, right = 6pt, top = 5pt, bottom = 5pt,
+	fontupper = \small,
+	title    = {\scriptsize\textsf{\textbf{Nutzung von Generativer künstlicher Intelligenz}}},
+	coltitle = linkblue!80!black,
+	colbacktitle = linkblue!10,
+	fonttitle = \normalfont,
+]
+	\textbf{Werkzeuge:} Claude Sonnet 5, Opus 5 (Anthropic) \\
+	\textbf{Abschnitte:} Formulierungshilfen, Textgenerierung und Formatierungshilfen wurden teilweise in 
+	den Abschnitten \ref{sec:motivation}, \ref{sec:grundlagen}, \ref{sec:konstanten}, \ref{sec:aufbau} genutzt.
+	In den restlichen Abschnitten wurden die genannten Transformatoren nur für die Recherche zu technischen
+	Fragen über die Erstellung von Darstellungen in \LaTeX{} und Python-Bibliotheken genutzt.
+\end{tcolorbox}
+
+
+\subsection{Theoretische Grundlagen}
+\label{sec:grundlagen}
+
+\subsection{Versuchsaufbau}
+\label{sec:aufbau}
+
+\subsection{Verwendete Konstanten}
+\label{sec:konstanten}
+
+\section{Messprotokoll}
+\label{sec:messprotokoll}
+
+
+\section{Auswertung}
+\label{sec:auswertung}
+
+
+\section{Diskussion}
+\label{sec:diskussion}
+
+
+\section{Anhang}
+\label{sec:anhang}
+
+
+\end{document}

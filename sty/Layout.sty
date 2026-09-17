@@ -1,0 +1,33 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sty/Layout}[2026/08/27 PAP1 Layout]
+
+\RequirePackage[
+a4paper,left=24mm,right=24mm,top=30mm,bottom=25mm,
+headheight= 15mm,]{geometry} % Seitenlayout
+
+\RequirePackage[utf8]{inputenc}	% Eingabe
+\RequirePackage[T1]{fontenc}	% Ausgabe
+\RequirePackage[ngerman]{babel}	% Sprachpaket
+\RequirePackage{fancyhdr}	% Kopfzeile
+\RequirePackage{hyperref}	% Hyperlinks
+\RequirePackage{graphicx}
+\RequirePackage{diagbox}
+
+% Absatzformatierung
+\RequirePackage{parskip}
+\setlength{\parindent}{0mm}
+
+% Kopf- und Fußzeile
+\renewcommand{\headrulewidth}{0.2mm}
+
+\fancyhead[L]{
+\textsf{\textbf{Physikalisches Anfängerpraktikum 1}} \\
+Protokoll\\
+Versuch: 11
+}
+
+\fancyhead[R]{
+Gruppe 8\\
+Matthes Neumann \\
+Partner: Linus Fuchs
+}

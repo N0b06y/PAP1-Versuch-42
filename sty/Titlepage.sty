@@ -1,0 +1,71 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sty/Titlepage}[2026/08/27 PAP1 Titelseite]
+
+\RequirePackage{keyval}
+
+% ---------------------------------------------------------------------------
+% Standardwerte (werden genutzt, wenn ein Schlüssel nicht an \makecoverpage übergeben wird)
+% ---------------------------------------------------------------------------
+\newcommand{\cp@university}{Universität Heidelberg}
+\newcommand{\cp@faculty}{Fakultät für Physik und Astronomie}
+\newcommand{\cp@course}{Physikalisches Anfängerpraktikum 1 (PAP1)}
+\newcommand{\cp@experiment}{}
+\newcommand{\cp@title}{}
+\newcommand{\cp@group}{}
+\newcommand{\cp@authors}{}
+\newcommand{\cp@tutor}{\rule{4cm}{0.4pt}}
+\newcommand{\cp@dateexp}{\rule{4cm}{0.4pt}}
+\newcommand{\cp@datesub}{\today}
+
+% ---------------------------------------------------------------------------
+% Parameter
+% ---------------------------------------------------------------------------
+\define@key{coverpage}{university}{\renewcommand{\cp@university}{#1}}
+\define@key{coverpage}{faculty}{\renewcommand{\cp@faculty}{#1}}
+\define@key{coverpage}{course}{\renewcommand{\cp@course}{#1}}
+\define@key{coverpage}{experiment}{\renewcommand{\cp@experiment}{#1}}
+\define@key{coverpage}{title}{\renewcommand{\cp@title}{#1}}
+\define@key{coverpage}{group}{\renewcommand{\cp@group}{#1}}
+\define@key{coverpage}{authors}{\renewcommand{\cp@authors}{#1}}
+\define@key{coverpage}{tutor}{\renewcommand{\cp@tutor}{#1}}
+\define@key{coverpage}{dateexperiment}{\renewcommand{\cp@dateexp}{#1}}
+\define@key{coverpage}{datesubmission}{\renewcommand{\cp@datesub}{#1}}
+
+% ---------------------------------------------------------------------------
+% \makecoverpage{ key = value , key = value , ... }
+% Werte mit Komma müssen in geschweifte Klammern: title={A, B}
+% Bei authors können mehrere Personen mit \\ getrennt werden.
+% ---------------------------------------------------------------------------
+\newcommand{\makecoverpage}[1]{%
+	\setkeys{coverpage}{#1}%
+	\begin{titlepage}
+		\centering
+
+		{\scshape\large \cp@university \par}
+		{\scshape \cp@faculty \par}
+
+		\vspace{1.5cm}
+
+		{\scshape\Large \cp@course \par}
+
+		\vspace{2cm}
+
+		{\huge\bfseries Protokoll zu Versuch \cp@experiment \par}
+
+		\vspace{0.6cm}
+
+		{\Large\itshape \cp@title \par}
+
+		\vspace{2.5cm}
+
+		\begin{tabular}{rl}
+			\textbf{Gruppe:}             & \cp@group \\[4pt]
+			\textbf{Autoren:}            & \begin{tabular}[t]{@{}l@{}}\cp@authors\end{tabular} \\[4pt]
+			\textbf{Tutor:in:}              & \cp@tutor \\[4pt]
+			\textbf{Versuchsdatum:}      & \cp@dateexp \\[4pt]
+			\textbf{Abgabedatum:}        & \cp@datesub \\
+		\end{tabular}
+
+		\vfill
+	\end{titlepage}%
+}
