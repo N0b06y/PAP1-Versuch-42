@@ -3,10 +3,15 @@
 \usepackage{sty/Commands}
 \usepackage{sty/Titlepage}
 \usepackage{siunitx}
+\usepackage{float}
 \sisetup{separate-uncertainty = true}
 \usepackage{multirow}
 \usepackage{marginnote}
 \usepackage{xcolor}
+\usepackage{pdfpages}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, decorations.pathmorphing, calc}
 
 % ---- Link-Stil -------------------------------------------------------
 % Keine roten Kästen: farbiger Linktext, Querverweise im Text unterstrichen,
@@ -25,18 +30,24 @@
 \let\OrigRef\ref
 \renewcommand{\ref}[1]{{\color{linkblue}\uline{\OrigRef{#1}}}}
 \renewcommand{\eqref}[1]{{\color{linkblue}\uline{\textup{(\OrigRef{#1})}}}}
+% Link auf eine Seite des eingebundenen Messprotokolls: \mpref{label}{angezeigter Text}
+\newcommand{\mpref}[2]{{\color{linkblue}\uline{\hyperref[#1]{#2}}}}
+% Rote Markierung fuer Stellen, die noch selbst geschrieben werden muessen (vor Abgabe entfernen)
+\newcommand{\schreiben}[1]{{\color{red}\textbf{[TODO::} #1\textbf{]}}}
+
+
 % -----------------------------------------------------------------------
 
 
 \begin{document}
 
 \makecoverpage{
-	experiment      = 73,
-	title           = {VERSUCHSTITEL},
+	experiment      = 42,
+	title           = {Wärmekapazität},
 	group           = 8,
 	authors         = {Matthes Neumann},
-	tutor           = {Natalia Sychva},
-	dateexperiment  = {30. August 2026}
+	tutor           = {Tim Kluge},
+	dateexperiment  = {18. September 2026}
 }
 
 \pagestyle{fancy}
@@ -69,30 +80,778 @@
 	Fragen über die Erstellung von Darstellungen in \LaTeX{} und Python-Bibliotheken genutzt.
 \end{tcolorbox}
 
+Ziel des Versuchs ist die Bestimmung der spezifischen Wärmekapazität und der Molwärme von Graphit,
+Aluminium und Blei in zwei Temperaturbereichen. Zwischen etwa \qty{20}{\degreeCelsius} und
+\qty{100}{\degreeCelsius} messen wir mit einem Mischungskalorimeter, dessen Wasserwert wir zuvor
+bestimmen, zwischen Raumtemperatur und \qty{-195.8}{\degreeCelsius} über die Masse des verdampften
+flüssigen Stickstoffs. Die Ergebnisse vergleichen wir mit Literaturwerten und dem Gesetz von
+Dulong-Petit. Aus dem Verhältnis beider Molwärmen schätzen wir die Debye-Temperaturen der Stoffe ab.
+
 
 \subsection{Theoretische Grundlagen}
 \label{sec:grundlagen}
 
+Die Formeln stammen aus der Versuchsanleitung (Abschnitte V und VI). Es gehen nur
+Temperaturdifferenzen ein, diese sind in \si{\kelvin} und \si{\degreeCelsius} gleich.
+
+\subsubsection{Wärmekapazität}
+\label{sec:waermekapazitaet}
+
+Führt man einem Körper ohne Phasenübergang die Wärmemenge $Q$ zu, steigt seine Temperatur um
+$\Delta T$. Wärmekapazität $C$, spezifische Wärmekapazität $c$ und Molwärme $c_\mathrm{mol}$ sind
+\begin{equation}
+	C = \frac{Q}{\Delta T} , \qquad c = \frac{Q}{m\,\Delta T} , \qquad c_\mathrm{mol} = M c
+	\label{eq:molwaerme}
+\end{equation}
+mit der Masse $m$ und der molaren Masse $M$ des Körpers.
+
+\subsubsection{Dulong-Petit-Gesetz und Debye-Modell}
+\label{sec:debye}
+
+Klassisch schwingt jedes Atom eines Festkörpers harmonisch in drei Raumrichtungen. Nach dem
+Äquipartitionsprinzip trägt jeder dieser Schwingungsfreiheitsgrade im Mittel die Energie $kT$
+(je $\tfrac{1}{2}kT$ kinetisch und potentiell), ein Mol also $U = 3 N_A k T = 3RT$. Daraus folgt das
+Gesetz von Dulong-Petit
+\begin{equation}
+	c_\mathrm{mol,DP} = 3R \approx \qty{24.94}{\joule\per\mol\per\kelvin} .
+	\label{eq:dulong_petit}
+\end{equation}
+Quantenmechanisch sind die Schwingungsenergien gequantelt. Schwingungen mit Energien groß gegen $kT$
+werden kaum angeregt („frieren ein“), die Molwärme sinkt daher mit der Temperatur. Im Debye-Modell
+hängt sie nur von $T/\Theta_D$ ab, mit der materialabhängigen Debye-Temperatur $\Theta_D$:
+\begin{equation}
+	c_\mathrm{mol,Debye}(T) = 9R \left(\frac{T}{\Theta_D}\right)^{3} \int_{0}^{\Theta_D/T} \frac{x^4 e^x}{\left(e^x - 1\right)^2}\,\mathrm{d}x .
+	\label{eq:debye}
+\end{equation}
+Für $T \gg \Theta_D$ geht $c_\mathrm{mol,Debye}$ gegen $3R$, für $T \to 0$ gilt
+$c_\mathrm{mol,Debye} \propto T^3$. Stoffe mit hoher Debye-Temperatur wie Graphit und Aluminium
+liegen deshalb schon bei Raumtemperatur unter dem Dulong-Petit-Wert.
+
+Beide Messverfahren liefern nicht die Molwärme bei einer festen Temperatur, sondern ihren Mittelwert
+über das durchlaufene Intervall von $T_a$ bis $T_b$:
+\begin{equation}
+	\bar{c}_\mathrm{mol} = \frac{1}{T_b - T_a} \int_{T_a}^{T_b} c_\mathrm{mol}(T)\,\mathrm{d}T .
+	\label{eq:mittelwert}
+\end{equation}
+Mit \eqref{eq:debye} numerisch integriert ergibt das Abb.~\ref{fig:debye}: oben die mittleren
+Molwärmen für \qtyrange{300}{373}{\kelvin} (siedendes Wasser) und \qtyrange{77}{300}{\kelvin}
+(flüssiger Stickstoff), unten ihr Verhältnis als Funktion von $\Theta_D$. Aus dem gemessenen
+Verhältnis
+\begin{equation}
+	q = \frac{c_\mathrm{tief}}{c_\mathrm{hoch}}
+	\label{eq:q}
+\end{equation}
+der Molwärme $c_\mathrm{tief}$ aus der Stickstoffmessung und $c_\mathrm{hoch}$ aus der Messung mit
+siedendem Wasser lesen wir $\Theta_D$ im unteren Teilbild ab, den Fehler aus den Ablesungen bei
+$q \pm \Delta q$.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[page=105, trim=128 155 490 106, clip, width=0.45\textwidth]{PAP1 Anleitung V3.pdf}
+	\caption{Mittlere Molwärmen (oben) und ihr Verhältnis $q$ (unten) als Funktion der
+		Debye-Temperatur nach \eqref{eq:debye} und \eqref{eq:mittelwert} (Abb.~3 der Versuchsanleitung, S.~105).}
+	\label{fig:debye}
+\end{figure}
+
+\subsubsection{Mischungskalorimeter}
+\label{sec:kalorimeter}
+
+Ein Probekörper der Masse $m_x$ und Temperatur $T_1$ wird in das Wasser (Masse $m_W$, Temperatur
+$T_2 < T_1$) des Kalorimeters gebracht, es stellt sich die Mischungstemperatur $T$ ein.
+Vernachlässigt man Verdunstung und Wärmeaustausch mit der Umgebung, ist die vom Körper abgegebene
+Wärme gleich der von Wasser und Kalorimeter aufgenommenen:
+\begin{equation}
+	Q = m_x c_x \left(T_1 - T\right) = \left(m_W c_W + W\right)\left(T - T_2\right) .
+	\label{eq:energiebilanz}
+\end{equation}
+Dabei ist $c_W$ die spezifische Wärme des Wassers und $W$ die Wärmekapazität des Kalorimeters
+(Wasserwert, Herstellerangabe ca.~\qty{70}{\joule\per\kelvin}). Aufgelöst folgt
+\begin{equation}
+	c_x = \frac{\left(m_W c_W + W\right)\left(T - T_2\right)}{m_x \left(T_1 - T\right)} .
+	\label{eq:cx_misch}
+\end{equation}
+Die Wassermasse ergibt sich aus den Wägungen des leeren und des gefüllten Kalorimeters,
+\begin{equation}
+	m_W = m_\mathrm{Kal+W} - m_\mathrm{Kal} .
+	\label{eq:a2_mw}
+\end{equation}
+Für den Wasserwert gießen wir Wasser der Temperatur $T_1 \approx \qty{50}{\degreeCelsius}$ in das
+Kalorimeter mit der Anfangstemperatur $T_2$ (Raumtemperatur). Mit der Mischungstemperatur $\bar{T}$
+folgt aus derselben Bilanz
+\begin{equation}
+	W = m_W c_W \frac{T_1 - \bar{T}}{\bar{T} - T_2} .
+	\label{eq:wasserwert}
+\end{equation}
+Der Temperaturausgleich ist zu schnell, um $\bar{T}$ direkt abzulesen. Wir messen deshalb den
+anschließenden, näherungsweise linearen Temperaturabfall und extrapolieren ihn auf den
+Einfüllzeitpunkt $t_0$.
+
+\subsubsection{Messung mit flüssigem Stickstoff}
+\label{sec:stickstoff}
+
+Ein Probekörper mit Raumtemperatur $T_1$ kühlt im flüssigen Stickstoff auf dessen Siedetemperatur
+$T_S$ ab. Die abgegebene Wärme verdampft Stickstoff der Masse $m_V$ (Verdampfungswärme $Q_V$):
+\begin{equation}
+	Q = Q_V m_V = m_x c_x \left(T_1 - T_S\right)
+	\quad\Rightarrow\quad
+	c_x = \frac{Q_V m_V}{m_x \left(T_1 - T_S\right)} .
+	\label{eq:cx_stickstoff}
+\end{equation}
+Auch ohne Probe verdampft ständig Stickstoff. Die Verdampfungsrate bestimmen wir aus zwei Wägungen
+$m_1$, $m_2$ des Dewargefäßes im Abstand $t_V$ und ziehen den Anteil während der Siededauer
+$\Delta t$ von der Massendifferenz vor ($m_0$) und nach ($m_\mathrm{end}$) dem Eintauchen ab:
+\begin{equation}
+	m_V = m_0 - m_\mathrm{end} - \frac{m_1 - m_2}{t_V}\,\Delta t .
+	\label{eq:mv}
+\end{equation}
+
+\subsubsection{Fehlerrechnung}
+\label{sec:fehlerrechnung}
+
+Unsicherheiten pflanzen wir nach Gauß fort:
+\begin{equation}
+	\Delta f = \sqrt{\sum_{j} \left(\frac{\partial f}{\partial x_j}\,\Delta x_j\right)^{2}} .
+	\label{eq:gauss}
+\end{equation}
+Den Fehler des Thermometers behandeln wir als statistisch: $W$ und $c_x$ nach
+\eqref{eq:wasserwert} und \eqref{eq:cx_misch} hängen nur von Temperaturdifferenzen ab, ein gemeinsamer
+systematischer Versatz fällt dort heraus. Zwei Werte vergleichen wir über
+\begin{equation}
+	t = \frac{\left|x_1 - x_2\right|}{\sqrt{\Delta x_1^2 + \Delta x_2^2}}
+	\label{eq:a2_sigma}
+\end{equation}
+(bei Literaturwerten und beim Vergleich von $q$ mit $1$ entfällt $\Delta x_2$). Ab $t \ge 3$ werten
+wir eine Abweichung als signifikant.
+
+
 \subsection{Versuchsaufbau}
 \label{sec:aufbau}
+
+Das Kalorimeter mit Deckel steht auf einem Magnetrührer (Abb.~\ref{fig:aufbau}). Die großen
+Probekörper (Graphit, Aluminium, Blei) hängen an einem Drahthaken am Stativ im siedenden Wasser
+eines Glasbechers auf der Heizplatte. Die kleinen Probekörper werden an einem Faden in ein
+Dewargefäß mit flüssigem Stickstoff getaucht, das auf der elektronischen Waage steht. Temperaturen
+messen wir mit einem elektronischen Thermometer, Zeiten mit einer Stoppuhr. Die
+Ablesegenauigkeiten stehen auf Seite~\mpref{page:mp-geraete}{2} des Messprotokolls.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[page=102, trim=81 244 435 107, clip, width=0.65\textwidth]{PAP1 Anleitung V3.pdf}
+	\caption{Versuchsaufbau (Abb.~1 der Versuchsanleitung, S.~102).}
+	\label{fig:aufbau}
+\end{figure}
 
 \subsection{Verwendete Konstanten}
 \label{sec:konstanten}
 
+\begin{table}[H]
+	\centering
+	\small
+	\begin{tabular}{llll}
+		\toprule
+		Größe & Symbol & Wert & Quelle \\
+		\midrule
+		Spez. Wärme Wasser (\qtyrange{15}{65}{\degreeCelsius}) & $c_W$ & \qty{4.186(4)}{\joule\per\gram\per\kelvin} & Anleitung V.2, S.~105 \\
+		Wasserwert des Kalorimeters & $W$ & \qty{86(6)}{\joule\per\kelvin} & Aufgabe I (eigene Messung) \\
+		Molare Masse Graphit & $M_\mathrm{C}$ & \qty{12.01}{\gram\per\mol} & Anleitung VIII, S.~108 \\
+		Molare Masse Aluminium & $M_\mathrm{Al}$ & \qty{26.98}{\gram\per\mol} & Anleitung VIII, S.~108 \\
+		Molare Masse Blei & $M_\mathrm{Pb}$ & \qty{207.2}{\gram\per\mol} & Anleitung VIII, S.~108 \\
+		Lit.-Wert spez. Wärme Graphit (\qty{300}{\kelvin}) & $c_\mathrm{C,lit}$ & \qty{0.709}{\joule\per\gram\per\kelvin} & Anleitung VIII, S.~108 \\
+		Lit.-Wert spez. Wärme Aluminium (\qty{300}{\kelvin}) & $c_\mathrm{Al,lit}$ & \qty{0.90}{\joule\per\gram\per\kelvin} & Anleitung VIII, S.~108 \\
+		Lit.-Wert spez. Wärme Blei (\qty{300}{\kelvin}) & $c_\mathrm{Pb,lit}$ & \qty{0.129}{\joule\per\gram\per\kelvin} & Anleitung VIII, S.~108 \\
+		Ideale Gaskonstante & $R$ & \qty{8.314}{\joule\per\mol\per\kelvin} & Anleitung V.1, Gl.~(4), S.~103 \\
+		Debye-Temperatur Blei & $\Theta_{D,\mathrm{Pb}}$ & \qty{95}{\kelvin} & Anleitung VIII / Abb.~2 \\
+		Debye-Temperatur Aluminium & $\Theta_{D,\mathrm{Al}}$ & \qty{430}{\kelvin} & Anleitung VIII / Abb.~2 \\
+		Debye-Temperatur Diamant & $\Theta_{D,\mathrm{C}}$ & \qty{2230}{\kelvin} & Anleitung VIII / Abb.~2 \\
+		\bottomrule
+	\end{tabular}
+	\caption{Konstanten und Literaturwerte.}
+	\label{tab:konstanten}
+\end{table}
+
+Es ist wichtig zu bemerken, dass die Literaturwerte hierbei für $\qty{300}{\kelvin}$ und der Wert der Debye-Temperatur mit dem wir Graphit vergleichen,
+ist nicht der Literaturwert für Graphit, sondern der für Diamant.
+
+\clearpage
 \section{Messprotokoll}
 \label{sec:messprotokoll}
 
+\textbf{Anmerkung:} Nicht ausgefüllte Seiten wurden nicht dargestellt.
 
+
+\begin{center}
+	\phantomsection\label{page:mp-deckblatt}
+	\includegraphics[
+		width=\textwidth, height=0.9\textheight, keepaspectratio,
+		page=1
+	]{Attachments/flattened_vector.pdf}
+\end{center}
+
+\includepdf[
+	pages=2,
+	pagecommand={\thispagestyle{empty}\phantomsection\label{page:mp-geraete}}
+]{Attachments/flattened_vector.pdf}
+
+\includepdf[
+	pages=4,
+	pagecommand={\thispagestyle{empty}\phantomsection\label{page:mp-massen}}
+]{Attachments/flattened_vector.pdf}
+
+\includepdf[
+	pages=5,
+	pagecommand={\thispagestyle{empty}\phantomsection\label{page:mp-wasserwert}}
+]{Attachments/flattened_vector.pdf}
+
+\includepdf[
+	pages=7,
+	pagecommand={\thispagestyle{empty}\phantomsection\label{page:mp-graphit}}
+]{Attachments/flattened_vector.pdf}
+
+\includepdf[
+	pages=8,
+	pagecommand={\thispagestyle{empty}\phantomsection\label{page:mp-aluminium}}
+]{Attachments/flattened_vector.pdf}
+
+\includepdf[
+	pages=9,
+	pagecommand={\thispagestyle{empty}\phantomsection\label{page:mp-blei}}
+]{Attachments/flattened_vector.pdf}
+
+\includepdf[
+	pages=11,
+	pagecommand={\thispagestyle{empty}\phantomsection\label{page:mp-stickstoff}}
+]{Attachments/flattened_vector.pdf}
+
+
+\clearpage
 \section{Auswertung}
 \label{sec:auswertung}
 
+\subsection{Wasserwert $W$}
+
+Wir bestimmen nun den Wasserwert $W$ grafisch auf Millimeterpapier.
+Dafür Tragen wir die gemessene Zeit in Sekunden auf die Abszisse gegen
+die Temperatur zu diesem Zeitpunkt in Grad Celsius auf der Ordinate auf
+(siehe Abb.~\ref{fig:wasserwert}). Mit der Gleichung~\eqref{eq:wasserwert}
+kommen wir wie folgt auf den Wasserwert:
+
+% \begin{align}
+% 	W = m_w c_w \frac{\Delta T_{T_1 \bar{T}}}{\Delta T_{T_2 \bar{T}}}
+% \end{align}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[
+		width=\textwidth, keepaspectratio
+	]{Attachments/v42-ausw-aufg-1.jpg}
+	\caption{Temperaturverlauf im Kalorimeter nach dem Einfüllen des warmen Wassers (Aufgabe I).}
+	\label{fig:wasserwert}
+\end{figure}
+
+Aus diesem Diagramm und der Seite~\mpref{page:mp-wasserwert}{5} im Messprotokoll
+lesen wir die Werte
+
+\begin{equation}
+	\boxed{
+		\begin{aligned}
+			m_W 	&= \qty{241.33(5)}{\gram}\\\
+			\bar{T} &= \qty{47.98(11)}{\degreeCelsius}\\
+			T_1		&= \qty{50.00(0.05)}{\degreeCelsius}\\
+			T_2		&= \qty{24.2(5)}{\degreeCelsius}
+		\end{aligned}
+	}
+\end{equation}
+
+ab. Aus der Anleitung erhaltewn wir $c_W = \qty{4.186(4)}{\frac{\joule}{\gram\kelvin}}$ 
+Wir wenden auf diese Werte Gleichung~\eqref{eq:wasserwert} an
+und pflanzen mit Gauß den Fehler wie folgt fort:
+
+
+  % Ausgangsformel
+  \begin{equation} W = \frac{c_{w} m_{w} \left(- T + T_{1}\right)}{T - T_{2}} \end{equation}
+
+  % Gauss allgemein
+  \begin{equation} \Delta W = \sqrt{\left(\frac{\partial W}{\partial m_{w}}\,\Delta m_{w}\right)^2 + \left(\frac{\partial W}{\partial c_{w}}\,\Delta c_{w}\right)^2 + \left(\frac{\partial W}{\partial T_{1}}\,\Delta T_{1}\right)^2 + \left(\frac{\partial W}{\partial T}\,\Delta T\right)^2 + \left(\frac{\partial W}{\partial T_{2}}\,\Delta T_{2}\right)^2} \end{equation}
+
+  % partielle Ableitungen
+  \begin{align}
+    \frac{\partial W}{\partial m_{w}} &= \frac{c_{w} \left(- \bar{T} + T_{1}\right)}{\bar{T} - T_{2}} \\
+    \frac{\partial W}{\partial c_{w}} &= \frac{m_{w} \left(- \bar{T} + T_{1}\right)}{\bar{T} - T_{2}} \\
+    \frac{\partial W}{\partial T_{1}} &= \frac{c_{w} m_{w}}{\bar{T} - T_{2}} \\
+    \frac{\partial W}{\partial \bar{T}} &= \frac{c_{w} m_{w} \left(- T_{1} + T_{2}\right)}{\left(\bar{T} - T_{2}\right)^{2}} \\
+    \frac{\partial W}{\partial T_{2}} &= - \frac{c_{w} m_{w} \left(\bar{T} - T_{1}\right)}{\left(\bar{T} - T_{2}\right)^{2}}
+  \end{align}
+
+  % Fehlerformel ausgeschrieben
+  \begin{equation}
+	\resizebox{\textwidth}{!}{$\displaystyle
+	\Delta W
+	= \sqrt{\left(\frac{c_{w} \left(- T + T_{1}\right)}{T - T_{2}}\,\Delta m_{w}\right)^2 + \left(\frac{m_{w} \left(- T + T_{1}\right)}{T - T_{2}}\,\Delta c_{w}\right)^2 + \left(\frac{c_{w} m_{w}}{T - T_{2}}\,\Delta T_{1}\right)^2 + \left(\frac{c_{w} m_{w} \left(- T_{1} + T_{2}\right)}{\left(T - T_{2}\right)^{2}}\,\Delta T\right)^2 + \left(- \frac{c_{w} m_{w} \left(T - T_{1}\right)}{\left(T - T_{2}\right)^{2}}\,\Delta T_{2}\right)^2}
+	$}
+\end{equation}
+
+
+Damit erhalten wir den Wasserwert
+
+\begin{equation}
+	\boxed{
+		\begin{aligned}
+			W = \qty{86(6)}{\joule\per\kelvin}
+		\end{aligned}
+	}
+\end{equation}
+
+
+
+\subsection{Spezifische Wärmekapazitäten und Molwärmen (Aufgabe II)}
+\label{sec:aufg2}
+
+Nach der Bestimmung der Wärmekapazität des Kaloriemeters können wir nun die Wärmekapazität der 
+Probekörper bestimmen. Zunächst haben wir die grösseren Probekörper in kochendem Wasser auf ca. 
+$T_1$ erhitzt 
+und dann in das Kaloriemeter gehängt, in welchem Wasser bei Zimmertemperatur $T_2$ vorlag. Wir 
+warten dann darauf, dass sich ein Temperaturgelichgewicht bildet und können damit nachvollziehen
+wie viel thermische Energie das Wasser im Kaloriemeter aufgenommen hat. Somit haben wir Information
+über die Wärmekapazität des Probekörpers.\\
+Dafür lesen wir aus dem Messprotokoll Seiten~\mpref{page:mp-massen}{4}, \mpref{page:mp-wasserwert}{5} und \mpref{page:mp-graphit}{7}--\mpref{page:mp-blei}{9} die folgenden Messwerte:
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{lSSSll}
+		\toprule
+		Größe & {Graphit} & {Aluminium} & {Blei} & Unsicherheit & Quelle \\
+		\midrule
+		$m_x$ [\unit{\gram}] & 123.48 & 173.70 & 682.44 & \qty{0.05}{\gram} & MP S.~4 \\
+		$m_\mathrm{Kal}$ [\unit{\gram}] & 281.28 & 281.28 & 281.28 & \qty{0.05}{\gram} & MP S.~5 \\
+		$m_\mathrm{Kal+W}$ [\unit{\gram}] & 609.81 & 611.94 & 610.88 & \qty{0.05}{\gram} & MP S.~7--9 \\
+		$m_W$ [\unit{\gram}] & 328.53 & 330.66 & 329.60 & \qty{0.07}{\gram} & Gl.~\eqref{eq:a2_mw} \\
+		$T_1$ [\unit{\degreeCelsius}] & 99.7 & 99.7 & 99.7 & \qty{0.1}{\kelvin} & MP S.~7--9 \\
+		$T_2$ [\unit{\degreeCelsius}] & 33.6 & 25.0 & 30.9 & \qty{0.1}{\kelvin} & MP S.~7--9 \\
+		$T$ [\unit{\degreeCelsius}] & 36.70 & 31.10 & 34.2 & \qty{0.1}{\kelvin} & MP S.~7--9 \\
+		\bottomrule
+	\end{tabular}
+	\caption{Messwerte der großen Probekörper.}
+	\label{tab:a2_messwerte}
+\end{table}
+
+Wir verwenden die Gleichung~\eqref{eq:cx_misch} bzw.~\eqref{eq:molwaerme} um daraus die spezifische Wärmekapazität bzw.
+Molwärme zu erhalten. Wir pflanzen den Fehler durch diese Gleichung wie folgt fort:
+
+  % Ausgangsformel
+  \begin{equation} c_x = \frac{\left(T - T_{2}\right) \left(W + c_{W} m_{W}\right)}{m_{x} \left(- T + T_{1}\right)} \end{equation}
+
+  % Gauss allgemein
+  \begin{equation}
+	\resizebox{\textwidth}{!}{$\displaystyle
+	\Delta c_x = \sqrt{\left(\frac{\partial c_x}{\partial m_{W}}\,\Delta m_{W}\right)^2 + \left(\frac{\partial c_x}{\partial c_{W}}\,\Delta c_{W}\right)^2 + \left(\frac{\partial c_x}{\partial W}\,\Delta W\right)^2 + \left(\frac{\partial c_x}{\partial T}\,\Delta T\right)^2 + \left(\frac{\partial c_x}{\partial T_{2}}\,\Delta T_{2}\right)^2 + \left(\frac{\partial c_x}{\partial m_{x}}\,\Delta m_{x}\right)^2 + \left(\frac{\partial c_x}{\partial T_{1}}\,\Delta T_{1}\right)^2}
+	$}
+  \end{equation}
+
+  % partielle Ableitungen
+  \begin{align}
+    \frac{\partial c_x}{\partial m_{W}} &= \frac{c_{W} \left(- T + T_{2}\right)}{m_{x} \left(T - T_{1}\right)} \\
+    \frac{\partial c_x}{\partial c_{W}} &= \frac{m_{W} \left(- T + T_{2}\right)}{m_{x} \left(T - T_{1}\right)} \\
+    \frac{\partial c_x}{\partial W} &= \frac{- T + T_{2}}{m_{x} \left(T - T_{1}\right)} \\
+    \frac{\partial c_x}{\partial T} &= \frac{\left(T_{1} - T_{2}\right) \left(W + c_{W} m_{W}\right)}{m_{x} \left(T - T_{1}\right)^{2}} \\
+    \frac{\partial c_x}{\partial T_{2}} &= \frac{W + c_{W} m_{W}}{m_{x} \left(T - T_{1}\right)} \\
+    \frac{\partial c_x}{\partial m_{x}} &= \frac{\left(T - T_{2}\right) \left(W + c_{W} m_{W}\right)}{m_{x}^{2} \left(T - T_{1}\right)} \\
+    \frac{\partial c_x}{\partial T_{1}} &= - \frac{\left(T - T_{2}\right) \left(W + c_{W} m_{W}\right)}{m_{x} \left(T - T_{1}\right)^{2}}
+  \end{align}
+
+  % Fehlerformel ausgeschrieben
+  \begin{equation}
+	\resizebox{\textwidth}{!}{$\displaystyle
+	\Delta c_x = \sqrt{\left(\frac{c_{W} \left(- T + T_{2}\right)}{m_{x} \left(T - T_{1}\right)}\,\Delta m_{W}\right)^2 + \left(\frac{m_{W} \left(- T + T_{2}\right)}{m_{x} \left(T - T_{1}\right)}\,\Delta c_{W}\right)^2 + \left(\frac{- T + T_{2}}{m_{x} \left(T - T_{1}\right)}\,\Delta W\right)^2 + \left(\frac{\left(T_{1} - T_{2}\right) \left(W + c_{W} m_{W}\right)}{m_{x} \left(T - T_{1}\right)^{2}}\,\Delta T\right)^2 + \left(\frac{W + c_{W} m_{W}}{m_{x} \left(T - T_{1}\right)}\,\Delta T_{2}\right)^2 + \left(\frac{\left(T - T_{2}\right) \left(W + c_{W} m_{W}\right)}{m_{x}^{2} \left(T - T_{1}\right)}\,\Delta m_{x}\right)^2 + \left(- \frac{\left(T - T_{2}\right) \left(W + c_{W} m_{W}\right)}{m_{x} \left(T - T_{1}\right)^{2}}\,\Delta T_{1}\right)^2}
+	$}
+  \end{equation}
+
+  % Ausgangsformel
+  \begin{equation} c_{\mathrm{mol}} = M c_{x} \end{equation}
+
+  % Gauss allgemein
+  \begin{equation} \Delta c_{\mathrm{mol}} = \sqrt{\left(\frac{\partial c_{\mathrm{mol}}}{\partial c_{x}}\,\Delta c_{x}\right)^2} \end{equation}
+
+  % partielle Ableitungen
+  \begin{align}
+    \frac{\partial c_{\mathrm{mol}}}{\partial c_{x}} &= M
+  \end{align}
+
+  % Fehlerformel ausgeschrieben
+  \begin{equation} \Delta c_{\mathrm{mol}} = \sqrt{\left(M\,\Delta c_{x}\right)^2} \end{equation}
+
+
+Damit kommen wir auf die folgenden Ergebnisse in Tabelle~\ref{tab:a2_ergebnisse}. 
+Dabei wird die Molwärme mit dem ungerundeten Wert der spezifischen Wärmekapazität
+berechnet. Wir vergleichen direkt mit den angegebenen Literaturwerten und
+dem Gesetz von Dulong-Petit.
+
+\begin{table}[H]
+	\centering
+	\resizebox{\textwidth}{!}{%
+	\begin{tabular}{lcccccccc}
+		\toprule
+		Probe & $c_x$ [\unit{\frac{\joule}{\gram\kelvin}}] & $c_\mathrm{lit}$ [\unit{\frac{\joule}{\gram\kelvin}}] & $c_x/c_\mathrm{lit}$ & $t_\mathrm{lit}$ & $c_\mathrm{mol}$ [\unit{\frac{\joule}{\mol\kelvin}}] & $M c_\mathrm{lit}$ [\unit{\frac{\joule}{\mol\kelvin}}] & $c_\mathrm{mol}/3R$ & $t_\mathrm{DP}$ \\
+		\midrule
+		Graphit   & \num{0.582(28)} & 0.709 & 0.82 & $\num{4.63}\,\sigma$ & \num{7.0(4)}  & 8.52  & 0.28 & $\num{54.64}\,\sigma$ \\
+		Aluminium & \num{0.753(19)} & 0.90  & 0.84 & $\num{7.95}\,\sigma$ & \num{20.3(6)} & 24.3  & 0.81 & $\num{9.27}\,\sigma$ \\
+		Blei      & \num{0.108(5)}  & 0.129 & 0.84 & $\num{4.35}\,\sigma$ & \num{22.4(10)} & 26.7 & 0.90 & $\num{2.55}\,\sigma$ \\
+		\bottomrule
+	\end{tabular}}
+	\caption{Spezifische Wärmekapazitäten und Molwärmen; $t_\mathrm{lit}$: $\sigma$-Vergleich mit dem Literaturwert (gilt für $c_x$ und $c_\mathrm{mol}$ gleichermaßen, da $M$ exakt), $t_\mathrm{DP}$: $\sigma$-Vergleich von $c_\mathrm{mol}$ mit $3R = \qty{24.942}{\frac{\joule}{\mol\kelvin}}$, beide nach Gl.~\eqref{eq:a2_sigma}.}
+	\label{tab:a2_ergebnisse}
+\end{table}
+
+\begin{equation}
+	\boxed{
+		\begin{aligned}
+			c_\mathrm{C}  &= \qty{0.582(28)}{\frac{\joule}{\gram\kelvin}}, & c_\mathrm{mol,C}  &= \qty{7.0(4)}{\frac{\joule}{\mol\kelvin}}\\
+			c_\mathrm{Al} &= \qty{0.753(19)}{\frac{\joule}{\gram\kelvin}}, & c_\mathrm{mol,Al} &= \qty{20.3(6)}{\frac{\joule}{\mol\kelvin}}\\
+			c_\mathrm{Pb} &= \qty{0.108(5)}{\frac{\joule}{\gram\kelvin}}, & c_\mathrm{mol,Pb} &= \qty{22.4(10)}{\frac{\joule}{\mol\kelvin}}
+		\end{aligned}
+	}
+\end{equation}
+
+Es sind damit bei fast jedem Wert signifikante Abweichungen zu verzeichnen. Dabei ist aufällig, dass der Quotient $c_x/c_{lit}$
+beinahe gleichbleibt, wir also einen systematischen Fehler in eine Richtung zu haben scheinen. Zudem gibt es abgesehen von Blei
+noch höhere Abweichungen von der Dulong-Petit Vorhersage, was darauf hindeutet, dass dieses Gesetz im Bereich $\qty{20}{\degreeCelsius}$
+bis $\qty{100}{\degreeCelsius}$ nicht anwendbar ist.
+
+
+\subsection{Spezifische Wärmekapazitäten und Molwärmen bei Stickstofftemperatur (Aufgabe III)}
+\label{sec:aufg3}
+
+Wir verwendeten bei der Durchführung ein äquivalentes Verfahren, bei welchem wir die kleinen Probemassen bei
+Zimmertemperatur in das Stickstoffgefüllte Dewargefäß gehängt haben und die beim Temperaturausgleich verdunstete
+Masse an Stickstoff gemessenhaben. Um die ohne Verdunstungsrate ohne Ausgleichsvorgang zu bestimmen, haben 
+wir auf Seite~\mpref{page:mp-stickstoff}{11} eine entsprechende Messung über $\qty{2}{\min}$ durchgeführt.
+Für diese Messserie lesen wir alle wichtigen Werte von den Seiten~\mpref{page:mp-massen}{4} und~\mpref{page:mp-stickstoff}{11} im Messprotokoll:
+
+\begin{table}[H]
+	\centering
+	\caption{Massen der kleinen Probekörper sowie Dewar-Wägungen}
+	\label{tab:aufg3-messwerte}
+	\begin{tabular}{l c c c c}
+		\toprule
+		Probe & $m_x$ [\si{\gram}] & $m_0$ [\si{\gram}] & $m_\text{end}$ [\si{\gram}] & $\Delta t$ [\si{\second}] \\
+		\midrule
+		Graphit   & \num{37.60(5)}  & \num{447.66(5)} & \num{430.14(5)} & \num{62.75(10)} \\
+		Aluminium & \num{34.48(5)}  & \num{429.49(5)} & \num{402.80(5)} & \num{123.3(1)}  \\
+		Blei      & \num{138.21(5)} & \num{467.48(5)} & \num{447.79(5)} & \num{75.8(1)}   \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\caption{Verdunstungsrate, Raumtemperatur und Konstanten gemäß Anleitung}
+	\label{tab:aufg3-konstanten}
+	\begin{tabular}{l c c}
+		\toprule
+		Größe & Symbol & Wert \\
+		\midrule
+		Dewar-Masse (Beginn)                  & $m_1$        & \qty{497.45(5)}{\gram} \\
+		Dewar-Masse (nach $t_V$)              & $m_2$        & \qty{496.08(5)}{\gram} \\
+		Zeit zwischen den Wägungen            & $t_V$        & \qty{120.0(1)}{\second} \\
+		Raumtemperatur (= Anfangstemperatur)  & $T_1$        & \qty{24.80(10)}{\degreeCelsius} \\
+		Siedetemperatur fl.\ Stickstoff       & $T_S$        & \qty{-195.8}{\degreeCelsius} \\
+		Verdampfungswärme fl.\ Stickstoff     & $Q_V$        & \qty{199}{\joule\per\gram} \\
+		Molmasse Graphit                      & $M_\text{C}$  & \qty{12.01}{\gram\per\mole} \\
+		Molmasse Aluminium                    & $M_\text{Al}$ & \qty{26.98}{\gram\per\mole} \\
+		Molmasse Blei                         & $M_\text{Pb}$ & \qty{207.2}{\gram\per\mole} \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Wir berechnen die spezifische Wärmekapazitäten sowie Molwärmen bei der geringeren Temperatur im Dewar-Gefäß
+über die folgende Formel und bestimmen die Fehler mit der darauf folgenden Gauss'schen Fehlerfortpflanzung
+eben dieser Formel:
+
+
+  % Ausgangsformel
+  \begin{equation} m_V = m_{0} - m_\mathrm{end} - \frac{\Delta t \left(m_{1} - m_{2}\right)}{t_{V}} \end{equation}
+
+  % Gauss allgemein
+  \begin{equation}
+	\resizebox{\textwidth}{!}{$\displaystyle
+	\Delta m_V = \sqrt{\left(\frac{\partial m_V}{\partial m_{0}}\,\Delta m_{0}\right)^2 + \left(\frac{\partial m_V}{\partial m_\mathrm{end}}\,\Delta m_\mathrm{end}\right)^2 + \left(\frac{\partial m_V}{\partial m_{1}}\,\Delta m_{1}\right)^2 + \left(\frac{\partial m_V}{\partial m_{2}}\,\Delta m_{2}\right)^2 + \left(\frac{\partial m_V}{\partial t_{V}}\,\Delta t_{V}\right)^2 + \left(\frac{\partial m_V}{\partial (\Delta t)}\,\Delta(\Delta t)\right)^2}
+	$}
+  \end{equation}
+
+  % partielle Ableitungen
+  \begin{align}
+    \frac{\partial m_V}{\partial m_{0}} &= 1 \\
+    \frac{\partial m_V}{\partial m_\mathrm{end}} &= -1 \\
+    \frac{\partial m_V}{\partial m_{1}} &= - \frac{\Delta t}{t_{V}} \\
+    \frac{\partial m_V}{\partial m_{2}} &= \frac{\Delta t}{t_{V}} \\
+    \frac{\partial m_V}{\partial t_{V}} &= \frac{\Delta t \left(m_{1} - m_{2}\right)}{t_{V}^{2}} \\
+    \frac{\partial m_V}{\partial (\Delta t)} &= \frac{- m_{1} + m_{2}}{t_{V}}
+  \end{align}
+
+  % Fehlerformel ausgeschrieben
+  \begin{equation}
+	\resizebox{\textwidth}{!}{$\displaystyle
+	\Delta m_V = \sqrt{\left(\Delta m_{0}\right)^2 + \left(\Delta m_\mathrm{end}\right)^2 + \left(\frac{\Delta t}{t_{V}}\,\Delta m_{1}\right)^2 + \left(\frac{\Delta t}{t_{V}}\,\Delta m_{2}\right)^2 + \left(\frac{\Delta t \left(m_{1} - m_{2}\right)}{t_{V}^{2}}\,\Delta t_{V}\right)^2 + \left(\frac{- m_{1} + m_{2}}{t_{V}}\,\Delta(\Delta t)\right)^2}
+	$}
+  \end{equation}
+
+  % Ausgangsformel
+  \begin{equation} c_x = \frac{Q_{V} m_{V}}{m_{x} \left(T_{1} - T_{S}\right)} \end{equation}
+
+  % Gauss allgemein
+  \begin{equation} \Delta c_x = \sqrt{\left(\frac{\partial c_x}{\partial m_{V}}\,\Delta m_{V}\right)^2 + \left(\frac{\partial c_x}{\partial m_{x}}\,\Delta m_{x}\right)^2 + \left(\frac{\partial c_x}{\partial T_{1}}\,\Delta T_{1}\right)^2} \end{equation}
+
+  % partielle Ableitungen
+  \begin{align}
+    \frac{\partial c_x}{\partial m_{V}} &= \frac{Q_{V}}{m_{x} \left(T_{1} - T_{S}\right)} \\
+    \frac{\partial c_x}{\partial m_{x}} &= - \frac{Q_{V} m_{V}}{m_{x}^{2} \left(T_{1} - T_{S}\right)} \\
+    \frac{\partial c_x}{\partial T_{1}} &= - \frac{Q_{V} m_{V}}{m_{x} \left(T_{1} - T_{S}\right)^{2}}
+  \end{align}
+
+  % Fehlerformel ausgeschrieben
+  \begin{equation}
+	\resizebox{\textwidth}{!}{$\displaystyle
+	\Delta c_x = \sqrt{\left(\frac{Q_{V}}{m_{x} \left(T_{1} - T_{S}\right)}\,\Delta m_{V}\right)^2 + \left(- \frac{Q_{V} m_{V}}{m_{x}^{2} \left(T_{1} - T_{S}\right)}\,\Delta m_{x}\right)^2 + \left(- \frac{Q_{V} m_{V}}{m_{x} \left(T_{1} - T_{S}\right)^{2}}\,\Delta T_{1}\right)^2}
+	$}
+  \end{equation}
+
+  % Molwaerme: wie Aufgabe II
+  \begin{equation} \Delta c_{\mathrm{mol}} = \sqrt{\left(M\,\Delta c_{x}\right)^2} \end{equation}
+
+% \begin{itemize}
+% 	\item \schreiben{20-\%-Regel (Anleitung IV.3): Wägefehler dominieren; $\Delta t$, $t_V$ und $T_1$ vernachlässigbar (bei Pb auch $m_x$) -- trotzdem mitgerechnet. Linearitätscheck: Abweichung \qty{0.0}{\percent}, Gauß anwendbar.}
+% 	\item \schreiben{$m_V$ ungerundet in $c_x$, $c_x$ ungerundet in $c_\mathrm{mol}$ weiterverwendet; $M$ exakt.}
+% 	\item \schreiben{Thermometer: $T_S$ ist ein Literaturwert, ein Offset von $T_1$ fällt hier also nicht heraus; Einfluss auf $c_x$ nur $\approx \delta/\qty{220}{\kelvin}$ -- begründen, warum vernachlässigbar.}
+% \end{itemize}
+
+Daraus erhalten wir die folgenden Resultate, wobei $m_V$ die Verdunstete Stickstoffmasse ist:
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{lccc}
+		\toprule
+		Probe & $m_V$ [\unit{\gram}] & $\bar{c}_x$ [\unit{\frac{\joule}{\gram\kelvin}}] & $\bar{c}_\mathrm{mol}$ [\unit{\frac{\joule}{\mol\kelvin}}] \\
+		\midrule
+		Graphit   & \num{16.80(8)}  & \num{0.4031(20)} & \num{4.842(24)} \\
+		Aluminium & \num{25.28(11)} & \num{0.6615(29)} & \num{17.85(8)}  \\
+		Blei      & \num{18.82(9)}  & \num{0.1229(6)}  & \num{25.46(12)} \\
+		\bottomrule
+	\end{tabular}
+	\caption{Mittlere spezifische Wärmekapazitäten und Molwärmen zwischen $T_S$ und $T_1$.}
+	\label{tab:a3_ergebnisse}
+\end{table}
+
+Zusammengefasst liefert dieser Ecxperimentteil also die spezifischen Wärmekapazitäten bzw. Molwärmen
+
+\begin{equation}
+	\boxed{
+		\begin{aligned}
+			\bar{c}_\mathrm{C}  &= \qty{0.4031(20)}{\frac{\joule}{\gram\kelvin}}, & \bar{c}_\mathrm{mol,C}  &= \qty{4.842(24)}{\frac{\joule}{\mol\kelvin}}\\
+			\bar{c}_\mathrm{Al} &= \qty{0.6615(29)}{\frac{\joule}{\gram\kelvin}}, & \bar{c}_\mathrm{mol,Al} &= \qty{17.85(8)}{\frac{\joule}{\mol\kelvin}}\\
+			\bar{c}_\mathrm{Pb} &= \qty{0.1229(6)}{\frac{\joule}{\gram\kelvin}},  & \bar{c}_\mathrm{mol,Pb} &= \qty{25.46(12)}{\frac{\joule}{\mol\kelvin}}
+		\end{aligned}
+	}
+\end{equation}
+
+
+\subsection{Vergleich der Ergebnisse}
+\label{sec:vergleich}
+
+Wir vergleichen nun die Ergebnisse aus den Molwärmebestimmungen tiefer Temperaturen mit der hoher Temperaturen.
+Dabei verwenden wir die bekannten Rechenmethoden (siehe Gl.~\eqref{eq:q}, \eqref{eq:gauss} und~\eqref{eq:a2_sigma}).\\
+Die Debye-Temperatur ist dabei wie in der Anleitung angegeben an der Kurve in Anleitung Abb. 3 abgelesen (siehe Abb.~\ref{fig:debye} bzw.\ vergrößert Abb.~\ref{fig:debye-kurve} im Anhang).\\
+Wir können hierbei die Debye-Temperatur von Blei nicht bestimmen, da die Kurve aus Abb. 3 (Versuchsanleitung) an dieser Stelle nicht
+definiert ist. 
+
+
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{lccccc}
+		\toprule
+		Probe & $c_\mathrm{tief}$ [\unit{\frac{\joule}{\mol\kelvin}}] & $c_\mathrm{hoch}$ [\unit{\frac{\joule}{\mol\kelvin}}] & $q$ & $t_q$ & $\Theta_D$ [\unit{\kelvin}] \\
+		\midrule
+		Graphit   & \num{4.842(24)} & \num{7.0(4)}   & \num{0.69(4)}   & $\num{9.41}\,\sigma$ & \num{580(60)} \\
+		Aluminium & \num{17.85(8)}  & \num{20.3(6)}  & \num{0.879(22)} & $\num{5.51}\,\sigma$ & \num{300(40)} \\
+		Blei      & \num{25.46(12)} & \num{22.4(10)} & \num{1.14(6)}   & $\num{2.69}\,\sigma$ & --            \\
+		\bottomrule
+	\end{tabular}
+	\caption{Vergleich der gemessenen Wärmekapazitäten und damit bestimmte Debye-Wärme von Graphit, Aluminium und Blei.}
+	\label{tab:vgl_verhaeltnis}
+\end{table}
+
+Wir erkennen bei Graphit und Aluminium Proben eine Signifikante Reduzierung der Molwärme bei sinkender Temperatur.
+
+\begin{equation}
+	\boxed{
+		\begin{aligned}
+			q_\mathrm{C}  &= \num{0.69(4)},   & \Theta_{D,\mathrm{C}}  &= \qty{580(60)}{\kelvin}\\
+			q_\mathrm{Al} &= \num{0.879(22)}, & \Theta_{D,\mathrm{Al}} &= \qty{300(40)}{\kelvin}\\
+			q_\mathrm{Pb} &= \num{1.14(6)},   & \Theta_{D,\mathrm{Pb}} &: \text{nicht ablesbar}
+		\end{aligned}
+	}
+\end{equation}
+
+
+Diese Werte Vergleichen wir nun mit den Literaturwerten de Debye-Temperatur:
+
+\begin{table}
+	\begin{tabular}{lccc}
+		\toprule
+		Probe	&$\Theta_{D}$				&$\Theta_{D,lit}$		&$t$\\
+		\midrule
+		Graphit	& $\qty{580(60)}{\kelvin}$ 	&$\qty{2230}{\kelvin}$	& $\qty{27.5}{\sigma}$\\
+		Aluminium&$\qty{300(40)}{\kelvin}$ 	&$\qty{430}{\kelvin}$	& $\qty{3.2}{\sigma}$\\
+		Blei	& - 						&$\qty{95}{\kelvin}$	& -\\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Die berechneten Sigmaabweichungen sind nicht durch statistische Effekte zu erklären und gehören Diskutiert.
+
+Was wir tatsächlich gemessen haben, ist die mittlere Molwärme zwischen $\qty{77}{\kelvin}$ und $\qty{298}{\kelvin}$
+
+% \begin{itemize}
+% 	\item \schreiben{Signifikante Abnahme der Molwärme mit sinkender Temperatur: für welche Proben ($t_q$)}
+% 	\item \schreiben{Blei: $q > 1$ statt Abnahme}
+% \end{itemize}
+
+Abschliessend stellen wir nun alle bestimmten Werte tabellarisch dar:
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{lccc}
+		\toprule
+		Größe & Graphit & Aluminium & Blei \\
+		\midrule
+		\multicolumn{4}{l}{\textit{Aufgabe I: Wasserwert}} \\
+		$W$ [\unit{\joule\per\kelvin}] & \multicolumn{3}{c}{\num{86(6)}} \\
+		\midrule
+		\multicolumn{4}{l}{\textit{Aufgabe II: Kalorimeter}} \\
+		$m_x$ [\unit{\gram}]                     & \num{123.48(5)} & \num{173.70(5)} & \num{682.44(5)} \\
+		$m_W$ [\unit{\gram}]                     & \num{328.53(7)} & \num{330.66(7)} & \num{329.60(7)} \\
+		$T_1$ [\unit{\degreeCelsius}]            & \num{99.7(1)}   & \num{99.7(1)}   & \num{99.7(1)}   \\
+		$T_2$ [\unit{\degreeCelsius}]            & \num{33.6(1)}   & \num{25.0(1)}   & \num{30.9(1)}   \\
+		$T$ [\unit{\degreeCelsius}]              & \num{36.7(1)}   & \num{31.1(1)}   & \num{34.2(1)}   \\
+		$c_x$ [\unit{\frac{\joule}{\gram\kelvin}}] & \num{0.582(28)} & \num{0.753(19)} & \num{0.108(5)} \\
+		$c_\mathrm{lit}$ (\qty{300}{\kelvin}) [\unit{\frac{\joule}{\gram\kelvin}}] & 0.709 & 0.90 & 0.129 \\
+		$t_\mathrm{lit}$                         & $\num{4.63}\,\sigma$ & $\num{7.95}\,\sigma$ & $\num{4.35}\,\sigma$ \\
+		$c_\mathrm{mol}$ [\unit{\frac{\joule}{\mol\kelvin}}] & \num{7.0(4)} & \num{20.3(6)} & \num{22.4(10)} \\
+		$t_\mathrm{DP}$                          & $\num{54.64}\,\sigma$ & $\num{9.27}\,\sigma$ & $\num{2.55}\,\sigma$ \\
+		\midrule
+		\multicolumn{4}{l}{\textit{Aufgabe III: flüssiger Stickstoff}} \\
+		$m_x$ [\unit{\gram}]                     & \num{37.60(5)}  & \num{34.48(5)}  & \num{138.21(5)} \\
+		$m_V$ [\unit{\gram}]                     & \num{16.80(8)}  & \num{25.28(11)} & \num{18.82(9)}  \\
+		$T_1$ [\unit{\degreeCelsius}]            & \num{24.80(10)} & \num{24.80(10)} & \num{24.80(10)} \\
+		$\bar{c}_x$ [\unit{\frac{\joule}{\gram\kelvin}}] & \num{0.4031(20)} & \num{0.6615(29)} & \num{0.1229(6)} \\
+		$\bar{c}_\mathrm{mol}$ [\unit{\frac{\joule}{\mol\kelvin}}] & \num{4.842(24)} & \num{17.85(8)} & \num{25.46(12)} \\
+		\midrule
+		\multicolumn{4}{l}{\textit{Vergleich}} \\
+		$q = c_\mathrm{tief}/c_\mathrm{hoch}$    & \num{0.69(4)}   & \num{0.879(22)} & \num{1.14(6)} \\
+		$t_q$ (gegen $q = 1$)                    & $\num{9.41}\,\sigma$ & $\num{5.51}\,\sigma$ & $\num{2.69}\,\sigma$ \\
+		$\Theta_D$ [\unit{\kelvin}]              & \num{580(60)}   & \num{300(40)}   & -- \\
+		\bottomrule
+	\end{tabular}
+	\caption{Vergleich aller Messergebnisse und Resultate}
+	\label{tab:vgl_zusammenfassung}
+\end{table}
 
 \section{Diskussion}
 \label{sec:diskussion}
 
+In diesem Versuch haben wir Wärmekapazitäten von Blei, Graphit und Aluminium bestimmt. 
+Bevor wir die eigentliche Messung durchführen konnten mussten wir zunächst den Wasserwert des Kaloriemeters 
+bestimmen, welchen wir als Eichwert für die folgenden Messungen brauchen. Die Wärmekapazitätsmessung haben wir einmal
+mit auf ca. $\qty{100}{\degreeCelsius}$ erhitzten Proben in $\qty{24.2(5)}{\degreeCelsius}$ warmen Wasser
+durchgeführt und mit der Ausgleichstemperatur die Wärmekapazitäten bestimmt. Im zweiten Hauptversuchteil
+haben wir dann Proben bei Zimmertemperatur in ein Flüssigstickstoff-Bad gehängt und gemessen wie viel 
+Stickstoff verdampft. Damit haben wir die Wärmekapazitäten der Probestoffe bei hohen und niedrigen Temperaturen
+gemessen und können mit dem Quotient der molaren Wärmekapazitäten die Debye-Temperatur von Blei, Graphit und Aluminium 
+bestimmen. Die Ergebnisübersicht in in Tabelle~\ref{tab:vgl_zusammenfassung} einsehbar.\\
+
+Da es zu hohen Abweichungen unserer Werte im Vergleich gegebener Literaturwerte gekommen ist, müssen diese
+dringen diskutiert werden.
+Bei Aufgabe I finden wir keine Vergleichswerte, weshalb wir mögliche Fehler folgender Aufgaben nur gegebenenfalls
+als Folge dieser Eichung diskutieren können. Es bleibt zu bemerken, dass Die Messwerte nur knapp eine augleichsgerade 
+zulassen und in der Messung selbst der Fehler begangen wurde, den Rührer erst nach $\qty{150}{\second}$ einzuschalten. 
+Damit müsste man theoretisch zwei verschiedene Steigungen berücksichtigen, was in der Auswertung nicht getan wurde.
+Bei korrekter Durchführung wäre ein Wasserwert von knapp $\qty{100}{\joule\per\kelvin}$ zu erwarten. Diese Änderung
+hat jedoch in den weiteren Rechnungen keinen Effekt in eine Größenordnung, der unsere Abweichungen erklären würde.\\
+
+In der zweiten Aufgabe liegt nahe, dass die Proben tatsächlich eine Temperatur von ca. $\qty{90}{\degreeCelsius}$ hatten,
+als sie in dem Wasserbad platziert wurden. Eine solche Verschiebung liegt nahe, da es sich um einen systemischen 
+Fehler handeln muss und der Wert rechnerisch sinnvoll ist. Eine mögliche Erklärung ist, dass wir die Siedetemperatur
+über den Luftdruck berechnet haben und damit einen Eichfehler im Thermometer sichtbar machen, der bei reiner
+Differenzmessung von Temperaturen nicht auffallen würde. Dann hätten wir auch mit dem gleichen Thermometer die
+Zimmertemperatur messen müssen. 
+Zudem kann es sein, dass wir die Proben nicht lang genug im Siedebad erwärmt haben, was auch erklärt warum wir bei nur
+einer Probe den entsprechenen Punkt im Messprotokoll abgehakt haben. Dagegen spricht jedoch, dass bei eben dieser
+abgehakten Probe die Abweichung am größten ist.
+Eine noch plausiblerere Fehlerursache ist, dass wir die Proben zu lange in der
+Luft gehalten haben, wärend wir sie von Siedebad in das Kaloriemeter transferiert haben. Dabei kann Wasser an der
+Probenoberfläche verdampfen, was durch den Verdunstungseffekt dei Probe schneller runterkühlt.
+Diese Fehler können sich auch überlagern und vorallem sind die Literaturwerte für eine andere Temperatur angegeben
+und bei Graphit, welches die höchste Abweichung vorweist, entspricht der Literaturwert nicht mal dem richtigen Stoff.
+Dieser ist nämlich für Diamant angegeben, welches eine andere Bindungsstruktur aufweist.\\
+In der letzten Aufgabe haben wir auch erhebliche AZbweichungen. Diese stammen aber vollständig aus Aufgabe II. Wenn
+man statt den in Aufgabe II experimentell bestimmten Werten rechnet, kommt man weitestgehen auf sinnvolle Werte. Der
+Aluminiumwert stimmt benahe genau mit dem Literaturwert überein, bei Blei verschwindet der rätselhafte Quotient außerhalb
+des Definitionsbereichs der Debye-Kurve. Lediglich bei Graphit kann man keinen sivollen Vergleich anstellen, da wir nur
+denb Literaturwert für Diamant kennen. Das deutet aber stark darauf hin, dass unsere Stickstoffmessung eigentlich korrekt
+ist und die Abweichungen der Resultate durch Probleme in der Messung zu Auswertungsaufgabe II bedingt sind.
+Zusammenfassen lässt sich sagen, dass unsere Messung nicht ganz Reibungslos durchgeführt werden konnte. Diese Probleme
+waren für uns jedoch lediglich dornige Chancen um uns deutlich tiefgründiger mit dem Experiment und möglichen Fehlerquellen
+bei thermodynamischen Versuchen zu beschäftigen. Somit halte ich das erzielte Lernergebnis durch diesen Versuch für höchst 
+befriedigend und damit den Versuch erfolgreich.
+
+
+% *aufg 1 kurve sehr komisch:
+% * Kein exponentielles verhalten, nicht monoton, knick
+
+% \subsection*{Aufgabe II}
+% \begin{itemize}
+% 	\item \schreiben{Ergebnis zusammenfassen: $c_x$ für C, Al, Pb je \qtyrange{16}{18}{\percent} unter Literatur, $4{,}4$ bis $8{,}0\,\sigma$; gleicher Faktor bei allen Proben spricht für eine gemeinsame Ursache.}
+% 	\item \schreiben{$W$ als Ursache ausschließen: um die Abweichung zu erklären, müsste $W \approx \qtyrange{370}{400}{\joule\per\kelvin}$ statt \qty{86(6)}{\joule\per\kelvin} sein (Hersteller $\approx \qty{70}{\joule\per\kelvin}$).}
+% 	\item \schreiben{Mögliche Ursachen diskutieren: Wärmeverlust des Körpers beim Umsetzen (Umsetzdauer ca.~2 bzw.~4~min statt „so schnell wie möglich“) $\Rightarrow$ effektive Anfangstemperatur $< T_1$; Wasser am Körper verdunstet; Wärmeabgabe des Kalorimeters an die Umgebung, weil das Wasser 6--12~K über Raumtemperatur (\qty{24.8}{\degreeCelsius}) war $\Rightarrow$ Maximum $T$ zu niedrig.}
+% 	\item \schreiben{Abweichungen von der Anleitung: kein Vorlauf (nur ein $T_2$-Wert statt minütlicher Messung) -- bei Pb und C kühlte das Wasser aus der vorherigen Messung ab, $T_2$ beim Einsetzen evtl. schon kleiner $\Rightarrow$ $T-T_2$ zu klein, $c_x$ zu klein; Verweildauer $\geq\qty{5}{\minute}$ nur bei Graphit dokumentiert; abgelesen oder Max-Funktion nicht vermerkt.}
+% 	\item \schreiben{Anmerkung: bei Al (erste Messung, frisches Wasser bei Raumtemperatur) ist der Faktor genauso groß $\Rightarrow$ die $T_2$-Drift allein erklärt es nicht, und die längere Umsetzdauer bei Al (4 statt 2~min) ändert den Faktor kaum -- abwägen, welcher Effekt dominiert.}
+% 	\item \schreiben{Literaturwerte gelten für \qty{300}{\kelvin}, gemessen wird ein Mittelwert über ca.~\qtyrange{305}{373}{\kelvin} (Gl.~(8)); $c$ steigt mit $T$ (v.\,a. Graphit) $\Rightarrow$ der wahre Mittelwert läge sogar über dem Literaturwert, die Abweichung ist also eher noch größer.}
+% 	\item \schreiben{Dulong-Petit physikalisch deuten: Pb ($\Theta_D = \qty{95}{\kelvin} \ll T$) klassisch, $3R$ erwartet (Lit.-Wert \qty{26.7}{\frac{\joule}{\mol\kelvin}} sogar leicht darüber); Al ($\Theta_D = \qty{430}{\kelvin} \gtrsim T$) knapp darunter; Graphit ($\Theta_D$ sehr hoch, kein einheitlicher Wert, Diamantwert nur qualitativ) weit darunter, weil Schwingungsfreiheitsgrade eingefroren sind.}
+% \end{itemize}
+
+% \subsection*{Aufgabe III}
+% \begin{itemize}
+% 	\item \schreiben{Gemessen wurde $\bar{c}$ über \qtyrange{77}{298}{\kelvin}, nicht $c(T)$ -- daher auch kein direkter Vergleich mit den \qty{300}{\kelvin}-Literaturwerten.}
+% 	\item \schreiben{Größe der Verdunstungskorrektur: \qty{0.72}{\gram} (C), \qty{1.41}{\gram} (Al), \qty{0.87}{\gram} (Pb), d.\,h. \qtyrange{4}{5}{\percent} von $m_0 - m_\mathrm{end}$ -- ohne Korrektur wäre $\bar{c}_x$ um diesen Anteil zu groß.}
+% 	\item \schreiben{Systematik: Verdunstungsrate nur einmal (bei \qty{497}{\gram} Füllstand) statt vor jedem Körper bestimmt; Ende des Siedens schlecht erkennbar ($\Delta t$); Reif/Eis am Körper bzw. Faden; Stickstoff am Körper beim Herausnehmen.}
+% 	\item \schreiben{Blei über $3R$: mögliche Ursachen abwägen.}
+% \end{itemize}
+
+\section{Quellen}
+\label{sec:quellen}
+
+% thebibliography setzt in der Klasse article selbst eine \section*{Literatur};
+% die wird hier unterdrueckt, damit nur die nummerierte Ueberschrift oben steht.
+\begingroup
+\renewcommand{\section}[2]{}
+\begin{thebibliography}{9}
+
+\bibitem{anleitung}
+	Physikalisches Institut, Universität Heidelberg:
+	\emph{Versuch 42 -- Wärmekapazität} (Stand 02/2025) sowie Kapitel IV und V
+	\emph{Fehlerrechnung} und \emph{Ausgleichs- und Fehlergerade} (Stand 07/2026).
+	Versuchsanleitung zum Physikalischen Anfängerpraktikum PAP1.
+
+\end{thebibliography}
+\endgroup
 
 \section{Anhang}
 \label{sec:anhang}
 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{Attachments/debye-kurve.png}
+	\caption{Vergrößerte Ablesekurve zur Bestimmung der Debye-Temperatur (Abb.~3 der Versuchsanleitung, S.~105).}
+	\label{fig:debye-kurve}
+\end{figure}
 
 \end{document}

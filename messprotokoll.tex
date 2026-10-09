@@ -1,0 +1,661 @@
+\documentclass{article}
+\usepackage{sty/Layout}
+\usepackage{sty/Commands}
+\usepackage{siunitx}
+\usepackage{multirow}
+\usepackage{marginnote}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{needspace}
+
+% Textbreite 15 cm (210 mm - 2 x 30 mm)
+\geometry{left=30mm,right=30mm}
+
+\sisetup{output-decimal-marker = {,}, separate-uncertainty = true}
+
+% ===========================================================================
+% Kopfzeile
+% ===========================================================================
+\fancyhead[L]{\textsf{\textbf{Messprotokoll}}}
+\fancyhead[C]{}
+\fancyhead[R]{\textsf{Versuch 42 -- W\"armekapazit\"at}}
+
+% ===========================================================================
+% Makros fuer den Vordruck
+% ===========================================================================
+% Spaltentypen: L = linksbuendig, C = zentriert, A = Auswertungsspalte (grau)
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{A}[1]{>{\columncolor{black!8}\centering\arraybackslash}p{#1}}
+\setlength{\tabcolsep}{3pt}
+
+% Zeilenhoehe: \zh = 8,5 mm (normale Messzeile), \zhs = 7 mm (kompakte Zeile)
+\newcommand{\zh}{\rule[-2.5mm]{0pt}{8.5mm}}
+\newcommand{\zhs}{\rule[-2mm]{0pt}{7mm}}
+
+% Leerlinie zum Ausfuellen, optionale Breite
+\newcommand{\bl}[1][3cm]{\underline{\hspace{#1}}}
+
+% Ankreuzfeld
+\newcommand{\ak}{\raisebox{-0.4ex}{\setlength{\fboxsep}{0pt}\framebox[3.2mm]{\rule{0pt}{3.2mm}}}\,}
+
+% Kurzbeschreibung: was wird in diesem Abschnitt gemacht
+\newcommand{\was}[1]{%
+  \par\noindent\fbox{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{%
+    \small\textbf{Ziel:} #1}}\par}
+
+% Zeile im Einstellungsblock: Bezeichnung links, Felder rechts (umbrechend)
+\newcommand{\einst}[2]{%
+  \par\noindent\parbox[t]{3.3cm}{\raggedright #1}%
+  \parbox[t]{11.7cm}{\raggedright #2\rule[-1.5mm]{0pt}{6mm}}\par}
+
+% n Schreiblinien ueber die volle Breite
+\newcount\lncnt
+\newcommand{\linien}[1]{%
+  \par\begingroup\setlength{\parskip}{0pt}\lncnt=0
+  \loop\ifnum\lncnt<#1\advance\lncnt by 1
+    \noindent\rule{0pt}{8mm}\rule{\linewidth}{0.4pt}\par
+  \repeat\endgroup\par}
+
+% Beobachtungsfeld mit konkreter Frage
+\newcommand{\beob}[2]{%
+  \par\noindent\begin{minipage}{\linewidth}
+    \textbf{Beobachtung} (#1):\linien{#2}
+  \end{minipage}\par}
+
+% Hinweis unter Tabellen mit Auswertungsspalten
+\newcommand{\auswhinweis}{%
+  \par\vspace{0.5mm}\noindent
+  {\footnotesize Graue Spalten mit (A): erst bei der Auswertung ausf\"ullen.}\par}
+
+% Tabellenblock, der nicht ueber einen Seitenumbruch laeuft
+\newenvironment{tblock}{\par\noindent\begin{minipage}{\linewidth}}{\end{minipage}\par}
+
+% Abschnitt nur beginnen, wenn noch Platz fuer den Anfang ist
+\newcommand{\abschnitt}[1]{\Needspace{9cm}\section{#1}}
+
+
+\begin{document}
+
+\pagestyle{fancy}
+
+% ===========================================================================
+% Kopf
+% ===========================================================================
+\begin{center}
+  {\LARGE\bfseries Versuch 42 -- W\"armekapazit\"at} \\[0.4cm]
+  {\large Messprotokoll}
+\end{center}
+
+\vspace{0.3cm}
+
+\begin{tabular}{ll}
+  \textbf{Gruppe:}  & 8 \\[10pt]
+  \textbf{Autoren:} & \bl[8cm] \\[10pt]
+                    & \bl[8cm] \\[10pt]
+  \textbf{Tutor:}   & \bl[8cm] \\[10pt]
+  \textbf{Datum:}   & \bl[8cm] \\[10pt]
+  \textbf{Uhrzeit:} & von \bl[2.5cm] \quad bis \bl[2.5cm] \\[10pt]
+\end{tabular}
+
+\was{Mit der Mischungsmethode im Wasserkalorimeter werden die spezifischen
+  W\"armekapazit\"aten von Graphit, Aluminium und Blei bestimmt. Zuerst wird der Wasserwert
+  $W$ des Kalorimeters aus einem Mischungsversuch mit warmem Wasser ermittelt. Danach werden
+  die gro\ss{}en Probek\"orper in siedendem Wasser auf $T_1$ gebracht und im Kalorimeter die
+  Mischungstemperatur gemessen (Bereich \SIrange{20}{100}{\celsius}). Zuletzt werden die
+  kleinen Probek\"orper in fl\"ussigem Stickstoff abgek\"uhlt und aus der verdampften
+  Stickstoffmenge die spezifische W\"arme im Bereich \SIrange{-195.8}{20}{\celsius} bestimmt.
+  Aus dem Verh\"altnis beider Molw\"armen folgen die Debye-Temperaturen.}
+
+% ===========================================================================
+% 1 Verwendete Geraete
+% ===========================================================================
+\section{Verwendete Ger\"ate}
+
+\begin{tblock}
+  {\footnotesize
+  \begin{tabular}{|L{3.7cm}|L{3.2cm}||L{3.7cm}|L{3.2cm}|}
+    \hline
+    \zhs\textbf{laut I Messaufbau} & \textbf{Typ / Inventar-Nr.}
+      & \textbf{zus\"atzlich laut VI} & \textbf{Typ / Inventar-Nr.} \\
+    \hline\hline
+    \zhs Kalorimeter mit Deckel & & Wasserkocher & \\ \hline
+    \zhs Magnetr\"uhrer & & VE-Wasser & \\ \hline
+    \zhs R\"uhrfisch & & Gitter / Netz im Kalorimeter & \\ \hline
+    \zhs Heizplatte mit Glasbecher & & Tuch zum Abtrocknen & \\ \hline
+    \zhs Stativ mit Drahthaken & & Faden zum Eintauchen & \\ \hline
+    \zhs 3 gro\ss{}e Versuchsk\"orper\newline (Graphit, Alu, Blei) & & Millimeterpapier / Tablet & \\ \hline
+    \zhs 3 kleine Versuchsk\"orper & & Zange / Handschuhe & \\ \hline
+    \zhs Dewargef\"a\ss{} (fl.\ N$_2$) & & gro\ss{}er Vorrats-Dewar & \\ \hline
+    \zhs elektronisches Thermometer & & weiteres: & \\ \hline
+    \zhs elektronische Waage & & weiteres: & \\ \hline
+    \zhs Stoppuhr & & weiteres: & \\ \hline
+    \zhs Schutzbrille, Schutzhandschuhe & & weiteres: & \\ \hline
+  \end{tabular}}
+
+  \vspace{2mm}
+  Max-Funktion am Thermometer vorhanden \ak \quad
+  Schutzbrille und Handschuhe vorhanden und benutzt \ak \quad
+  Kalorimeter innen und au\ss{}en trocken \ak
+\end{tblock}
+
+\subsection*{Ablesegenauigkeiten}
+
+\begin{tblock}
+  {\small
+  \begin{tabular}{|L{3.0cm}|C{1.3cm}|C{2.2cm}|C{2.3cm}|C{2.3cm}|C{2.2cm}|}
+    \hline
+    \zhs\textbf{Instrument} & \textbf{Gr\"o\ss{}e}
+      & \textbf{Messbereich\newline eingestellt}
+      & \textbf{Skalenteilung /\newline Aufl\"osung}
+      & \textbf{Ablese-\newline unsicherheit}
+      & \textbf{Hersteller-\newline angabe} \\
+    \hline\hline
+    \zh Digitalthermometer & $T$ & & & & \\ \hline
+    \zh Waage (Kalorimeter) & $m$ & & & & \\ \hline
+    \zh Waage (Dewar) & $m$ & & & & \\ \hline
+    \zh Stoppuhr & $t$ & & & & \\ \hline
+    \zh Heizplatte (Skala) & $T_\mathrm{Platte}$ & & & & \\ \hline
+    \zh Raumtemp.:\ \bl[1.4cm] & $T_\mathrm{Raum}$ & & & & \\ \hline
+  \end{tabular}}
+
+  \vspace{2mm}
+  Reaktionszeit des Thermometers (Anzeige stabil nach ca.): \bl[1.8cm] s \quad
+  Waage tariert \ak \quad Waage nivelliert \ak
+\end{tblock}
+
+\beob{Ist der Thermometerfehler laut Hersteller statistisch oder systematisch (siehe
+  V.3)? Wurde f\"ur alle W\"agungen dieselbe Waage benutzt?}{3}
+
+% ===========================================================================
+% 2 Skizze des Versuchsaufbaus
+% ===========================================================================
+\abschnitt{Skizze des Versuchsaufbaus}
+
+\begin{tblock}
+  \textbf{Aufbau A -- Mischungskalorimeter (Aufgaben 1, 3 und 4).}
+  {\small Heizplatte bzw.\ Wasserkocher $\to$ Glasbecher mit siedendem Wasser, Probek\"orper
+  h\"angt am Drahthaken des Stativs frei im Wasser (ber\"uhrt den Boden nicht) $\to$ Umsetzen
+  auf das Gitter im Kalorimetergef\"a\ss{} $\to$ Deckel sofort schlie\ss{}en. Kalorimeter steht
+  zentrisch auf dem Magnetr\"uhrer; Probek\"orper au\ss{}ermittig (z.B.\ links), Thermometer
+  auf der gegen\"uberliegenden Seite, ohne den K\"orper zu ber\"uhren.}
+
+  \vspace{1mm}
+  \framebox[\linewidth]{\rule{0pt}{7.1cm}}
+\end{tblock}
+
+\begin{tblock}
+  \textbf{Aufbau B -- Dewar mit fl\"ussigem Stickstoff auf der Waage (Aufgabe 5).}
+  {\small Dewargef\"a\ss{} zu ca.\ $3/4$ mit fl.\ N$_2$ gef\"ullt $\to$ steht w\"ahrend der
+  gesamten Messung auf der Waage ($m(t)$) $\to$ kleiner Probek\"orper h\"angt am Faden und
+  wird langsam eingetaucht $\to$ Stoppuhr l\"auft vom Eintauchen bis zum Ende des Siedens.}
+
+  \vspace{1mm}
+  \framebox[\linewidth]{\rule{0pt}{7.1cm}}
+\end{tblock}
+
+\beob{Abweichungen vom Aufbau in Abb.~1, Lage von Thermometer, K\"orper und R\"uhrfisch im
+  Kalorimeter, Art der Wasserheizung (Heizplatte oder Wasserkocher)}{3}
+
+% ===========================================================================
+% 3 Aufgabe 1
+% ===========================================================================
+\abschnitt{Aufgabe 1: Vorbereiten des Wasserkalorimeters}
+
+\was{Der Magnetr\"uhrer wird vor Versuchsbeginn erprobt: Kalorimetergef\"a\ss{} zu drei
+  Vierteln mit VE-Wasser f\"ullen, zentrisch auf den R\"uhrer stellen und die Position so
+  optimieren, dass das charakteristische Ratschen des Magneten deutlich zu h\"oren ist. Es
+  werden keine Zahlenwerte gemessen, aber die gew\"ahlte Position gilt f\"ur alle folgenden
+  Messungen.}
+
+\subsection*{Einstellungen}
+
+\einst{F\"ullung:}{Gef\"a\ss{} zu drei Vierteln mit VE-Wasser gef\"ullt \ak \quad
+  F\"ullh\"ohe ca.\ \bl[1.5cm] cm}
+\einst{R\"uhrer:}{eingeschaltet \ak \quad Stufe \bl[1.5cm] \quad
+  Ratschen deutlich h\"orbar \ak \quad auch mit geschlossenem Deckel \ak}
+\einst{Position:}{zentrisch \ak \quad verschoben um ca.\ \bl[1.5cm] cm nach \bl[2.5cm]}
+\einst{Thermometer:}{taucht ein, ber\"uhrt den Probek\"orperplatz nicht \ak \quad
+  Eintauchtiefe \bl[1.6cm] cm}
+\einst{Uhrzeit:}{Vorbereitung abgeschlossen um \bl[1.8cm] Uhr}
+
+\beob{Bei welcher R\"uhrerstufe wird gut durchmischt, ohne dass der R\"uhrfisch springt?
+  Wie klingt das Ratschen bei richtiger Position, und bleibt sie w\"ahrend des Versuchs
+  erhalten?}{3}
+
+% ===========================================================================
+% 4 Aufgabe 2
+% ===========================================================================
+\abschnitt{Aufgabe 2: Massen aller Probek\"orper}
+
+\was{Alle sechs Probek\"orper werden trocken gewogen. Die gro\ss{}en K\"orper geh\"oren zu
+  Aufgabe~4 (siedendes Wasser), die kleinen zu Aufgabe~5 (fl\"ussiger Stickstoff). Die Massen
+  $m_x$ gehen unmittelbar in $c_x$ ein.}
+
+\subsection*{Einstellungen}
+
+\einst{Waage:}{tariert \ak \quad Anzeige stabil abgewartet \ak \quad
+  Unsicherheit $\Delta m =$ \bl[1.8cm] g (f\"ur alle W\"agungen)}
+\einst{K\"orper:}{trocken \ak \quad Faden bzw.\ Haken \ak mitgewogen \ak nicht mitgewogen}
+
+\begin{tblock}
+  {\small
+  \begin{tabular}{|L{2.6cm}|C{1.6cm}|C{2.2cm}|C{1.8cm}|L{3.2cm}|A{1.9cm}|}
+    \hline
+    \zhs\textbf{Probek\"orper} & \textbf{Gr\"o\ss{}e} & \textbf{$m_x$\newline [g]}
+      & \textbf{$\Delta m_x$\newline [g]} & \textbf{Zustand / Kennzeichnung}
+      & \textbf{$n = m/M$ (A)\newline [mol]} \\
+    \hline\hline
+    \zh Graphit    & gro\ss{} & & & & \\ \hline
+    \zh Aluminium  & gro\ss{} & & & & \\ \hline
+    \zh Blei       & gro\ss{} & & & & \\ \hline
+    \zh Graphit    & klein & & & & \\ \hline
+    \zh Aluminium  & klein & & & & \\ \hline
+    \zh Blei       & klein & & & & \\ \hline
+  \end{tabular}}
+  \auswhinweis
+\end{tblock}
+
+\beob{Oberfl\"ache der K\"orper (rau, oxidiert, feucht)? H\"angt an einem K\"orper noch
+  Wasser oder ein Draht? Wurden die K\"orper vor dem Wiegen abgetrocknet?}{2}
+
+% ===========================================================================
+% 5 Aufgabe 3
+% ===========================================================================
+\abschnitt{Aufgabe 3: Bestimmung des Wasserwertes $W$}
+
+\was{Das leere, trockene Kalorimeter (mit Netz und R\"uhrfisch, ohne Deckel) wird gewogen und
+  seine Anfangstemperatur $T_2$ als Zimmertemperatur gemessen. Wasser wird auf etwa
+  \SI{50}{\celsius} erhitzt, seine stabile Temperatur als $T_1$ notiert. Beim Einf\"ullen
+  (Zeitpunkt $t_0$) startet die Uhr; danach wird f\"unf Minuten lang alle \SI{30}{\second}
+  die Temperatur gemessen, bis ein linearer Abfall vorliegt. Die Mischungstemperatur $T$ wird
+  sp\"ater zeichnerisch auf $t_0$ extrapoliert.}
+
+\subsection*{W\"agungen und Ausgangstemperaturen}
+
+\einst{Kalorimeter leer:}{trocken \ak \ mit Netz \ak \ mit R\"uhrfisch \ak \ ohne Deckel \ak
+  \quad $m_\mathrm{Kal} =$ \bl[2.2cm] $\pm$ \bl[1.4cm] g}
+\einst{Zimmertemperatur:}{$T_2 =$ \bl[2cm] $\pm$ \bl[1.4cm] \si{\celsius} \quad
+  um \bl[1.6cm] Uhr}
+\einst{Warmes Wasser:}{Sollwert ca.\ \SI{50}{\celsius}; Heizplatte abgeschaltet um
+  \bl[1.6cm] Uhr}
+\einst{}{Anzeige unter R\"uhren konstant \ak \quad
+  $T_1 =$ \bl[2cm] $\pm$ \bl[1.4cm] \si{\celsius}}
+\einst{Einf\"ullen:}{Kalorimeter zur H\"alfte gef\"ullt \ak \quad Deckel sofort aufgelegt \ak
+  \quad R\"uhrer ein \ak}
+\einst{}{Zeitpunkt $t_0 =$ \bl[1.8cm] Uhr \quad (Uhr gestartet \ak)}
+\einst{Kalorimeter voll:}{nach der Messung, ohne Deckel: $m_\mathrm{Kal+W} =$ \bl[2.2cm]
+  $\pm$ \bl[1.4cm] g}
+
+\subsection*{Tabelle 3.1: Temperaturverlauf, alle \SI{30}{\second} \"uber \SI{5}{\minute}}
+
+\begin{tblock}
+  Unsicherheit: $\Delta T =$ \bl[1.8cm] \si{\celsius} \quad
+  (Zeitnullpunkt $t = 0$ ist der Einf\"ullzeitpunkt $t_0$)
+
+  \vspace{1mm}
+  \begin{minipage}[t]{0.49\linewidth}
+    {\small
+    \begin{tabular}{|C{0.7cm}|C{1.5cm}|C{1.7cm}|C{2.0cm}|}
+      \hline
+      \zhs\textbf{Nr.} & \textbf{$t$\newline [s]} & \textbf{Uhrzeit}
+        & \textbf{$T$\newline [\si{\celsius}]} \\
+      \hline\hline
+      \zhs 1 & 0   & & \\ \hline
+      \zhs 2 & 30  & & \\ \hline
+      \zhs 3 & 60  & & \\ \hline
+      \zhs 4 & 90  & & \\ \hline
+      \zhs 5 & 120 & & \\ \hline
+      \zhs 6 & 150 & & \\ \hline
+      \zhs 7 & 180 & & \\ \hline
+    \end{tabular}}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.49\linewidth}
+    {\small
+    \begin{tabular}{|C{0.7cm}|C{1.5cm}|C{1.7cm}|C{2.0cm}|}
+      \hline
+      \zhs\textbf{Nr.} & \textbf{$t$\newline [s]} & \textbf{Uhrzeit}
+        & \textbf{$T$\newline [\si{\celsius}]} \\
+      \hline\hline
+      \zhs 8  & 210 & & \\ \hline
+      \zhs 9  & 240 & & \\ \hline
+      \zhs 10 & 270 & & \\ \hline
+      \zhs 11 & 300 & & \\ \hline
+      \zhs 12 & \bl[0.9cm] & & \\ \hline
+      \zhs 13 & \bl[0.9cm] & & \\ \hline
+      \zhs 14 & \bl[0.9cm] & & \\ \hline
+    \end{tabular}}
+  \end{minipage}
+
+  \vspace{1mm}
+  {\footnotesize Zeilen 12--14: Reserve, falls der lineare Abfall nach \SI{5}{\minute} noch
+  nicht klar erkennbar ist.}
+\end{tblock}
+
+\subsection*{Ergebnisfelder (erst bei der Auswertung)}
+
+\begin{tblock}
+  {\small
+  \begin{tabular}{|L{4.4cm}|A{3.2cm}|A{3.2cm}|L{3.0cm}|}
+    \hline
+    \zhs\textbf{Gr\"o\ss{}e} & \textbf{Wert (A)} & \textbf{Unsicherheit (A)}
+      & \textbf{Bemerkung} \\
+    \hline\hline
+    \zh $m_W = m_\mathrm{Kal+W} - m_\mathrm{Kal}$ & & & \\ \hline
+    \zh $\bar{T}$ (zeichnerisch auf $t_0$) & & & Millimeterpapier \\ \hline
+    \zh $W$ nach Gl.~(13) & & & \\ \hline
+  \end{tabular}}
+  \auswhinweis
+\end{tblock}
+
+\beob{Wie schnell f\"allt die Temperatur, ab welchem Zeitpunkt ist der Abfall linear? Wurde
+  beim Einf\"ullen Wasser versch\"uttet oder ist Dampf entwichen? Lief der R\"uhrer w\"ahrend
+  der gesamten Messung?}{3}
+
+% ===========================================================================
+% 6 Aufgabe 4
+% ===========================================================================
+\abschnitt{Aufgabe 4: Spezifische W\"armekapazit\"aten mit kochendem Wasser}
+
+\was{Das Kalorimeter wird zu drei Vierteln mit frischem VE-Wasser gef\"ullt und gewogen. Der
+  gro\ss{}e Probek\"orper h\"angt mindestens \SI{5}{\minute} im sprudelnd kochenden Wasser und
+  nimmt dessen Temperatur $T_1$ an. Vor dem Einbringen wird die Kalorimetertemperatur einige
+  Minuten lang jede Minute gemessen ($T_2$), nach dem Einbringen bis zum sicheren Erreichen
+  des Temperaturmaximums $T$. Vor jeder Messung werden Wassermasse und $T_2$ neu bestimmt.}
+
+\subsection*{Gemeinsame Einstellungen}
+
+\einst{Heizplatte:}{beim Aufheizen h\"ochstens \SI{300}{\celsius} \ak \quad nach dem
+  Aufkochen auf \SI{250}{\celsius} reduziert \ak \quad eingestellt \bl[1.6cm] \si{\celsius}}
+\einst{Glasbecher:}{zur H\"alfte gef\"ullt \ak \quad ca.\ \bl[1.5cm] ml \quad
+  Wasser sprudelnd \ak}
+\einst{Probek\"orper:}{h\"angt am Stativ \ak \quad ber\"uhrt den Becherboden nicht \ak \quad
+  vollst\"andig untergetaucht \ak}
+\einst{Kalorimeter:}{zu drei Vierteln mit frischem VE-Wasser \ak \quad R\"uhrer ein \ak \quad
+  Deckel sofort nach dem Einsetzen \ak}
+\einst{Waage:}{$\Delta m =$ \bl[1.6cm] g \quad Thermometer: $\Delta T =$ \bl[1.6cm]
+  \si{\celsius}}
+
+% --- Makro fuer einen Probekoerper -----------------------------------------
+\newcommand{\koerperblock}[2]{%
+  \Needspace{12cm}
+  \subsection*{#1}
+
+  \begin{tblock}
+    \einst{W\"agung:}{$m_\mathrm{Kal+W} =$ \bl[2.2cm] g \quad um \bl[1.5cm] Uhr \quad
+      (leer: $m_\mathrm{Kal} =$ \bl[2.2cm] g)}
+    \einst{Siedebad:}{$T_1 =$ \bl[2cm] $\pm$ \bl[1.3cm] \si{\celsius} \quad
+      Anzeige stabil \ak \quad gemessen um \bl[1.5cm] Uhr}
+    \einst{Verweildauer:}{von \bl[1.5cm] bis \bl[1.5cm] Uhr \quad
+      (mindestens \SI{5}{\minute} \ak)}
+    \einst{Einsetzen:}{Zeitpunkt $t_0 =$ \bl[1.6cm] Uhr \quad Umsetzdauer ca.\ \bl[1.2cm] s
+      \quad Deckel sofort zu \ak}
+  \end{tblock}
+
+  \vspace{1mm}
+  \begin{tblock}
+    \begin{minipage}[t]{0.40\linewidth}
+      \textbf{#2a Vorlauf (jede Minute)}\\[1mm]
+      {\small
+      \begin{tabular}{|C{0.7cm}|C{1.4cm}|C{1.9cm}|}
+        \hline
+        \zhs\textbf{Nr.} & \textbf{Uhrzeit} & \textbf{$T$\newline [\si{\celsius}]} \\
+        \hline\hline
+        \zhs 1 & & \\ \hline
+        \zhs 2 & & \\ \hline
+        \zhs 3 & & \\ \hline
+        \zhs 4 & & \\ \hline
+        \zhs 5 & & \\ \hline
+      \end{tabular}}
+
+      \vspace{1mm}
+      {\footnotesize $T_2$ = letzter Wert vor dem Einsetzen.}
+
+      \vspace{1mm}
+      $T_2 =$ \bl[1.6cm] \si{\celsius}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.58\linewidth}
+      \textbf{#2b Verlauf nach dem Einsetzen (alle \SI{30}{\second})}\\[1mm]
+      {\small
+      \begin{tabular}{|C{0.7cm}|C{1.2cm}|C{1.4cm}|C{1.9cm}|C{1.5cm}|}
+        \hline
+        \zhs\textbf{Nr.} & \textbf{$t$\newline [s]} & \textbf{Uhrzeit}
+          & \textbf{$T$\newline [\si{\celsius}]} & \textbf{steigt /\newline f\"allt} \\
+        \hline\hline
+        \zhs 1  & 0   & & & \\ \hline
+        \zhs 2  & 30  & & & \\ \hline
+        \zhs 3  & 60  & & & \\ \hline
+        \zhs 4  & 90  & & & \\ \hline
+        \zhs 5  & 120 & & & \\ \hline
+        \zhs 6  & 150 & & & \\ \hline
+        \zhs 7  & 180 & & & \\ \hline
+        \zhs 8  & 210 & & & \\ \hline
+        \zhs 9  & 240 & & & \\ \hline
+        \zhs 10 & 270 & & & \\ \hline
+        \zhs 11 & 300 & & & \\ \hline
+        \zhs 12 & \bl[0.8cm] & & & \\ \hline
+      \end{tabular}}
+    \end{minipage}
+  \end{tblock}
+
+  \vspace{1mm}
+  \begin{tblock}
+    \einst{Maximum:}{$T =$ \bl[2cm] $\pm$ \bl[1.3cm] \si{\celsius} \quad
+      um \bl[1.5cm] Uhr \quad \ak abgelesen \ \ak Max-Funktion}
+    \einst{Kontrolle:}{Temperatur f\"allt danach wieder \ak \quad
+      K\"orper ber\"uhrte das Thermometer nicht \ak}
+  \end{tblock}
+  \beob{Wie lange dauert es bis zum Maximum? Spritzt Wasser beim Einsetzen? H\"angt Wasser
+    am K\"orper, oder ist er beim Umsetzen sichtbar abgek\"uhlt?}{2}}
+
+\koerperblock{Tabelle 4.1: Graphit (gro\ss{})}{4.1}
+
+\koerperblock{Tabelle 4.2: Aluminium (gro\ss{})}{4.2}
+
+\koerperblock{Tabelle 4.3: Blei (gro\ss{})}{4.3}
+
+\subsection*{Zusammenfassung Aufgabe 4}
+
+\begin{tblock}
+  {\small
+  \begin{tabular}{|L{2.0cm}|C{1.5cm}|C{1.5cm}|C{1.5cm}|C{1.5cm}|A{1.6cm}|A{1.6cm}|A{1.7cm}|}
+    \hline
+    \zhs\textbf{Probe} & \textbf{$m_x$\newline [g]} & \textbf{$m_W$\newline [g]}
+      & \textbf{$T_1$\newline [\si{\celsius}]} & \textbf{$T_2$\newline [\si{\celsius}]}
+      & \textbf{$T$\newline [\si{\celsius}]}
+      & \textbf{$c_x$ (A)\newline [J/(gK)]}
+      & \textbf{$c_\mathrm{mol}$ (A)\newline [J/(mol\,K)]} \\
+    \hline\hline
+    \zh Graphit   & & & & & & & \\ \hline
+    \zh Aluminium & & & & & & & \\ \hline
+    \zh Blei      & & & & & & & \\ \hline
+  \end{tabular}}
+
+  \vspace{0.5mm}
+  {\footnotesize $m_W$ und $T$ werden hier aus den Bl\"ocken 4.1--4.3 \"ubertragen;
+  $T$ ist das gemessene Maximum, also ein Messwert.}
+  \auswhinweis
+\end{tblock}
+
+% ===========================================================================
+% 7 Aufgabe 5
+% ===========================================================================
+\abschnitt{Aufgabe 5: Spezifische W\"armekapazit\"aten mit fl\"ussigem Stickstoff}
+
+\was{Der Dewar wird zu etwa $3/4$ mit fl\"ussigem Stickstoff gef\"ullt, auf die Waage
+  gestellt und der Temperaturausgleich abgewartet. Aus zwei W\"agungen im Abstand von
+  \SI{2}{\minute} folgt die Verdunstungsrate unter Umgebungsbedingungen. Danach wird
+  unmittelbar vor dem Eintauchen erneut gewogen, der kleine Probek\"orper (Anfangstemperatur
+  $T_1 = $ Zimmertemperatur) langsam am Faden eingetaucht und die Zeit bis zum Ende des
+  Siedens gestoppt. Die Massendifferenz ergibt die verdampfte Stickstoffmenge $m_V$.}
+
+\subsection*{Einstellungen}
+
+\einst{Sicherheit:}{Schutzbrille \ak \quad Handschuhe \ak \quad Raum gel\"uftet \ak}
+\einst{Dewar:}{zu ca.\ $3/4$ gef\"ullt \ak \quad steht frei auf der Waage \ak \quad
+  Waage tariert \ak}
+\einst{Temperaturausgleich:}{abgewartet von \bl[1.5cm] bis \bl[1.5cm] Uhr \quad
+  Sieden abgeklungen \ak}
+\einst{Zimmertemperatur:}{$T_1 =$ \bl[2cm] $\pm$ \bl[1.3cm] \si{\celsius} \quad
+  um \bl[1.5cm] Uhr}
+\einst{Waage:}{$\Delta m =$ \bl[1.6cm] g \quad Anzeige driftet: \ak nein \ \ak ja, ca.\
+  \bl[1.4cm] g/min}
+\einst{Eintauchen:}{langsam am Faden \ak \quad K\"orper vollst\"andig bedeckt \ak \quad
+  Uhr sofort gestartet \ak}
+
+\subsection*{Tabelle 5.1: Verdunstungsrate (W\"agung im Abstand von \SI{2}{\minute})}
+
+\begin{tblock}
+  {\small
+  \begin{tabular}{|L{2.0cm}|C{1.9cm}|C{1.3cm}|C{1.9cm}|C{1.3cm}|C{1.5cm}|A{2.2cm}|}
+    \hline
+    \zhs\textbf{Durchgang} & \textbf{$m_\mathrm{A}$\newline [g]} & \textbf{Uhrzeit}
+      & \textbf{$m_\mathrm{B}$\newline [g]} & \textbf{Uhrzeit}
+      & \textbf{$\Delta t$\newline [s]}
+      & \textbf{Rate (A)\newline [g/min]} \\
+    \hline\hline
+    \zh vor Graphit   & & & & & & \\ \hline
+    \zh vor Aluminium & & & & & & \\ \hline
+    \zh vor Blei      & & & & & & \\ \hline
+  \end{tabular}}
+
+  \vspace{0.5mm}
+  {\footnotesize Die Rate wird vor jedem Probek\"orper neu bestimmt, weil sie vom F\"ullstand
+  und von den Umgebungsbedingungen abh\"angt.}
+  \auswhinweis
+\end{tblock}
+
+\subsection*{Tabelle 5.2: Abk\"uhlen der kleinen Probek\"orper}
+
+\begin{tblock}
+  {\small
+  \begin{tabular}{|L{1.7cm}|C{1.8cm}|C{1.2cm}|C{1.2cm}|C{1.3cm}|C{1.8cm}|A{1.7cm}|A{1.9cm}|}
+    \hline
+    \zhs\textbf{Probe} & \textbf{$m_0$ vor dem\newline Eintauchen\newline [g]}
+      & \textbf{Ein-\newline tauchen\newline [Uhr]}
+      & \textbf{Siede-\newline ende\newline [Uhr]}
+      & \textbf{$\Delta t$\newline [s]}
+      & \textbf{$m_\mathrm{end}$\newline [g]}
+      & \textbf{$m_V$ (A)\newline [g]}
+      & \textbf{$c_x$ (A)\newline [J/(gK)]} \\
+    \hline\hline
+    \zh Graphit   & & & & & & & \\ \hline
+    \zh Aluminium & & & & & & & \\ \hline
+    \zh Blei      & & & & & & & \\ \hline
+  \end{tabular}}
+
+  \vspace{0.5mm}
+  {\footnotesize $m_\mathrm{end}$ wird direkt nach dem Herausnehmen des K\"orpers abgelesen.
+  $m_V$ ist die um die Verdunstungsrate aus Tabelle~5.1 korrigierte Massendifferenz.}
+  \auswhinweis
+\end{tblock}
+
+\subsection*{Kontrollen}
+
+\begin{tblock}
+  \einst{Reif / Eis:}{am Faden \ak \quad am K\"orper beim Herausnehmen \ak \quad
+    am Dewarrand \ak}
+  \einst{Rest-Stickstoff:}{in den gro\ss{}en Dewar zur\"uckgesch\"uttet \ak \quad
+    um \bl[1.6cm] Uhr}
+  \einst{Ende der Messung:}{\bl[1.8cm] Uhr \quad Raumtemperatur am Ende
+    \bl[1.8cm] \si{\celsius}}
+\end{tblock}
+
+\beob{Woran ist das Ende des Siedens zu erkennen, und wie eindeutig ist dieser Zeitpunkt?
+  Wie stark schwankt die Waagenanzeige w\"ahrend des Siedens? Bildet sich Eis, das die
+  W\"agung verf\"alscht?}{4}
+
+% ===========================================================================
+% 8 Nennwerte und Konstanten
+% ===========================================================================
+\abschnitt{Nennwerte und Konstanten laut Anleitung}
+
+\begin{tblock}
+  {\small
+  \begin{tabular}{|L{6.0cm}|L{5.4cm}|L{2.6cm}|}
+    \hline
+    \zhs\textbf{Gr\"o\ss{}e} & \textbf{Wert} & \textbf{Quelle} \\
+    \hline\hline
+    \zhs Spez.\ W\"arme von Wasser (\SIrange{15}{65}{\celsius})
+      & $c_W = (4{,}186 \pm 0{,}004)$ J/(g\,K) & V.2 \\ \hline
+    \zhs Wasserwert des Kalorimeters (Herstellerangabe)
+      & $W \approx \SI{70}{\joule\per\kelvin}$ & V.2 \\ \hline
+    \zhs Siedetemperatur fl.\ Stickstoff & $T_S = \SI{-195.8}{\celsius}$ & Anhang VIII \\ \hline
+    \zhs Verdampfungsw\"arme fl.\ Stickstoff & $Q_V = \SI{199}{\joule\per\gram}$ & Anhang VIII \\ \hline
+    \zhs Rel.\ Atommasse Blei & $M_\mathrm{Pb} = 207{,}2$ g/mol & Anhang VIII \\ \hline
+    \zhs Rel.\ Atommasse Aluminium & $M_\mathrm{Al} = 26{,}98$ g/mol & Anhang VIII \\ \hline
+    \zhs Rel.\ Atommasse Graphit & $M_\mathrm{C} = 12{,}01$ g/mol & Anhang VIII \\ \hline
+    \zhs Literaturwert $c$ Blei (\SI{300}{\kelvin}) & $0{,}129$ J/(g\,K) & Anhang VIII \\ \hline
+    \zhs Literaturwert $c$ Aluminium (\SI{300}{\kelvin}) & $0{,}90$ J/(g\,K) & Anhang VIII \\ \hline
+    \zhs Literaturwert $c$ Graphit (\SI{300}{\kelvin}) & $0{,}709$ J/(g\,K) & Anhang VIII \\ \hline
+    \zhs Debye-Temperatur Blei & $\Theta_{D,\mathrm{Pb}} = \SI{95}{\kelvin}$ & Abb.~2 \\ \hline
+    \zhs Debye-Temperatur Aluminium & $\Theta_{D,\mathrm{Al}} = \SI{430}{\kelvin}$ & Abb.~2 \\ \hline
+    \zhs Debye-Temperatur Diamant & $\Theta_{D,\mathrm{C}} = \SI{2230}{\kelvin}$ & Abb.~2 \\ \hline
+    \zhs Ideale Gaskonstante & $R = 8{,}314$ J/(mol\,K) & Gl.~(4) \\ \hline
+  \end{tabular}}
+
+  \vspace{1mm}
+  {\footnotesize F\"ur Graphit gibt es keinen einheitlichen Debye-Temperaturwert; der
+  Diamantwert darf nur f\"ur einen qualitativen Vergleich benutzt und muss diskutiert werden.}
+\end{tblock}
+
+\vspace{2mm}
+\noindent\textbf{Zusammenh\"ange:}
+\begin{align*}
+  &C = \frac{Q}{\Delta T}, \qquad c = \frac{Q}{m\,\Delta T}, \qquad
+    c_\mathrm{mol} = \frac{M}{m}\,\frac{Q}{\Delta T}, \qquad
+    W = m_W c_W\,\frac{T_1 - \bar{T}}{\bar{T} - T_2}, \\
+  &c_x = \frac{(m_W c_W + W)\,(T - T_2)}{m_x\,(T_1 - T)}, \qquad
+    Q = Q_V\,m_V = m_x c_x\,(T_1 - T_2), \qquad
+    c_\mathrm{mol,DP} = 3R.
+\end{align*}
+
+% ===========================================================================
+% 9 Bemerkungen
+% ===========================================================================
+\abschnitt{Bemerkungen und Besonderheiten w\"ahrend der Messung}
+
+\beob{St\"orungen, Umbauten, Abweichungen von der Anleitung, Ger\"atewechsel, versch\"uttetes
+  Wasser, wer hat was abgelesen?}{8}
+
+\vspace{1.5cm}
+
+\noindent
+\begin{tabular}{@{}p{6.8cm}@{\hspace{1.2cm}}p{6.8cm}@{}}
+  \rule{6.8cm}{0.4pt} & \rule{6.8cm}{0.4pt} \\
+  Datum, Unterschrift Studierende & Datum, Unterschrift Tutor:in \\
+\end{tabular}
+
+% ===========================================================================
+% Zusatzseite
+% ===========================================================================
+\newpage
+\section*{Zus\"atzlicher Platz f\"ur Messwerte und Notizen}
+
+\begin{tblock}
+  {\small
+  \begin{tabular}{|C{0.6cm}|C{1.5cm}|C{2.4cm}|C{2.4cm}|C{2.4cm}|C{2.4cm}|C{1.8cm}|}
+    \hline
+    \zhs\textbf{Nr.} & \textbf{Uhrzeit} & & & & & \\
+    \hline\hline
+    \zh & & & & & & \\ \hline
+    \zh & & & & & & \\ \hline
+    \zh & & & & & & \\ \hline
+    \zh & & & & & & \\ \hline
+    \zh & & & & & & \\ \hline
+    \zh & & & & & & \\ \hline
+    \zh & & & & & & \\ \hline
+    \zh & & & & & & \\ \hline
+    \zh & & & & & & \\ \hline
+    \zh & & & & & & \\ \hline
+  \end{tabular}}
+
+  \vspace{1mm}
+  {\footnotesize Leere Kopfzeile: Gr\"o\ss{}e und Einheit selbst eintragen, Unsicherheit als
+  eigene Spalte.}
+\end{tblock}
+
+\linien{12}
+
+\end{document}
